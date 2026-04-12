@@ -34,6 +34,10 @@ app.use('/api/tokens',      tokenRoutes);
 app.use('/api/queue',       queueRoutes);
 app.use('/api/departments', departmentRoutes);
 
+app.get("/test", (req, res) => {
+  res.json({ msg: "Backend working 🚀" });
+});
+
 // ── 404 Handler ────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
