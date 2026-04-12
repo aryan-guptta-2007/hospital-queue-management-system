@@ -6,7 +6,7 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
 
   useEffect(() => {
     const fetchQueue = () => {
-      fetch('https://hospital-queue-management-system-66c6.onrender.com/api/queue/all')
+      fetch("https://hospital-queue-management-system-66c6.onrender.com/api/queue/all")
         .then((res) => res.json())
         .then((data) => {
           if (data.success) {
