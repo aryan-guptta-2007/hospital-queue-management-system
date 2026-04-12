@@ -20,8 +20,10 @@ export const QueueProvider = ({ children }) => {
 
   const connect = useCallback(() => {
     // In dev, Vite proxy handles /ws → ws://localhost:5001/ws
-    const wsUrl = import.meta.env.VITE_WS_URL ||
-      'wss://hospital-queue-management-system-66c6.onrender.com/ws'
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.host;
+    const wsUrl = import.meta.env.VITE_WS_URL || `${protocol}//${host}/ws`;
+
 
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
