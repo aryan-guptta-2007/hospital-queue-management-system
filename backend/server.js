@@ -3,6 +3,10 @@ const http = require('http');
 const { WebSocketServer } = require('ws');
 const app = require('./src/app');
 
+app.get("/test", (req, res) => {
+  res.json({ msg: "Backend working 🚀" });
+});
+
 const PORT = process.env.PORT || 5000;
 
 // ── Create HTTP server from Express app ───────────────────
