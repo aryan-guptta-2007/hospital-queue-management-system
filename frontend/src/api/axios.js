@@ -3,7 +3,7 @@ import axios from 'axios'
 // In dev, Vite proxy forwards /api → http://localhost:5001
 // In production, set VITE_API_URL in your .env
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://hospital-queue-management-system-66c6.onrender.com/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 8000,
 })
