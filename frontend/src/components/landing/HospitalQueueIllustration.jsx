@@ -10,7 +10,7 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
       try {
         const res = await api.get('/queue/all')
         if (res.data.success) {
-          setQueue(res.data.data)
+          setQueue(res.data?.data || [])
         }
       } catch (err) {
         console.error('API Error:', err)
@@ -24,7 +24,7 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
     return () => clearInterval(interval)
   }, [])
 
-  const displayQueue = queue.map((dept) => ({
+  const displayQueue = queue && queue.map((dept) => ({
     token: dept.currentToken || `${dept.department.code}-000`,
     type: dept.department.name,
     waiting: dept.waitingCount,
