@@ -1,4 +1,48 @@
+import { useState, useEffect } from 'react'
+
 const HospitalQueueIllustration = ({ isDark = false }) => {
+  const [queue, setQueue] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchQueue = () => {
+      fetch('https://hospital-queue-management-system-66c6.onrender.com/api/queue/all')
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setQueue(data.data)
+          }
+          setLoading(false)
+        })
+        .catch((err) => {
+          console.error('API Error:', err)
+          setLoading(false)
+        })
+    }
+
+    fetchQueue()
+    const interval = setInterval(fetchQueue, 10000) // Polling every 10s
+    return () => clearInterval(interval)
+  }, [])
+
+  // Fallback to demo data if API is empty or failing, to maintain aesthetics
+  const displayQueue =
+    queue.length > 0
+      ? queue.map((dept) => ({
+          token: dept.currentToken || `${dept.department.code}-000`,
+          type: dept.department.name,
+          waiting: dept.waitingCount,
+          dot: dept.waitingCount > 5 ? 'bg-red-500' : 'bg-blue-500',
+        }))
+      : [
+          { token: 'A-043', type: 'Normal', dot: 'bg-blue-500' },
+          { token: 'A-044', type: 'Senior', dot: 'bg-violet-500' },
+          { token: 'E-001', type: 'Emergency', dot: 'bg-red-500' },
+        ]
+
+  const servingToken = queue.length > 0 ? queue[0].currentToken || 'A-000' : 'A-042'
+  const servingDept = queue.length > 0 ? queue[0].department.name : 'General Medicine'
+
   return (
     <div
       className={
@@ -36,10 +80,12 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
               Now Serving
             </p>
             <div className="mt-2 flex items-center justify-between">
-              <div>
-                <p className={isDark ? 'text-4xl font-black text-cyan-300 tabular-nums' : 'text-4xl font-black text-fuchsia-600 tabular-nums'}>A-042</p>
-                <p className={isDark ? 'text-sm font-semibold text-slate-300' : 'text-sm font-semibold text-slate-600'}>General Medicine</p>
-              </div>
+                <p className={isDark ? 'text-4xl font-black text-cyan-300 tabular-nums' : 'text-4xl font-black text-fuchsia-600 tabular-nums'}>
+                  {servingToken}
+                </p>
+                <p className={isDark ? 'text-sm font-semibold text-slate-300' : 'text-sm font-semibold text-slate-600'}>
+                  {servingDept}
+                </p>
               <div className={isDark ? 'relative flex h-12 w-12 items-center justify-center rounded-full bg-cyan-400/15' : 'relative flex h-12 w-12 items-center justify-center rounded-full bg-fuchsia-300/15'}>
                 <span className={isDark ? 'absolute h-full w-full rounded-full border border-cyan-300/60 animate-ping' : 'absolute h-full w-full rounded-full border border-fuchsia-400/50 animate-ping'} />
                 <span className={isDark ? 'relative z-10 h-3.5 w-3.5 rounded-full bg-cyan-300' : 'relative z-10 h-3.5 w-3.5 rounded-full bg-fuchsia-500'} />
@@ -62,13 +108,9 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
             </div>
 
             <div className="space-y-2.5">
-              {[
-                { token: 'A-043', type: 'Normal', dot: 'bg-blue-500' },
-                { token: 'A-044', type: 'Senior', dot: 'bg-violet-500' },
-                { token: 'E-001', type: 'Emergency', dot: 'bg-red-500' },
-              ].map((item) => (
+              {displayQueue.map((item, idx) => (
                 <div
-                  key={item.token}
+                  key={idx}
                   className={
                     isDark
                       ? 'flex items-center justify-between rounded-xl border border-cyan-500/20 bg-slate-900/55 px-3 py-2'
@@ -77,9 +119,13 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
                 >
                   <div className="flex items-center gap-2.5">
                     <span className={`h-2.5 w-2.5 rounded-full ${item.dot}`} />
-                    <span className={isDark ? 'font-bold text-slate-100' : 'font-bold text-slate-800'}>{item.token}</span>
+                    <span className={isDark ? 'font-bold text-slate-100' : 'font-bold text-slate-800'}>
+                      {item.token}
+                    </span>
                   </div>
-                  <span className={isDark ? 'text-xs font-semibold text-slate-300' : 'text-xs font-semibold text-slate-600'}>{item.type}</span>
+                  <span className={isDark ? 'text-xs font-semibold text-slate-300' : 'text-xs font-semibold text-slate-600'}>
+                    {item.type}
+                  </span>
                 </div>
               ))}
             </div>
