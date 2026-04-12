@@ -14,11 +14,11 @@ const { protect } = require('../middleware/authMiddleware');
 // GET /api/queue/public/:departmentId → public display board (no auth)
 router.get('/public/:departmentId', getPublicDisplay);
 
-// All queue management is admin-only → apply protect to all routes
-router.use(protect);
-
 // GET  /api/queue/all                      → all depts summary (dashboard)
 router.get('/all', getAllQueues);
+
+// All queue management is admin-only → apply protect to all routes
+router.use(protect);
 
 // GET  /api/queue/:departmentId            → full sorted queue for one dept
 router.get('/:departmentId', getQueue);
