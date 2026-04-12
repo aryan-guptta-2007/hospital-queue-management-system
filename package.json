@@ -1,0 +1,11 @@
+{
+  "name": "hospital-queue-system",
+  "version": "1.0.0",
+  "description": "Smart Queue & Token Management System for Government Hospitals",
+  "scripts": {
+    "test": "node integration-test.js",
+    "seed": "cd backend && npm run seed",
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd frontend && npm run dev"
+  }
+}

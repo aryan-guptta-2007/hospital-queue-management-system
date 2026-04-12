@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-[#f5f8ff] text-slate-900 font-sans antialiased dark:bg-[#090b17] dark:text-slate-100;
+  }
+  h1 {
+    @apply text-3xl font-bold tracking-tight;
+    font-family: theme('fontFamily.display');
+  }
+  h2 {
+    @apply text-2xl font-semibold tracking-tight;
+    font-family: theme('fontFamily.display');
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+@layer components {
+  /* Patient / public — primary actions */
+  .btn-primary {
+    @apply bg-gradient-to-br from-cyan-500 to-fuchsia-500 text-white font-semibold
+           py-4 px-8 rounded-2xl text-xl shadow-lg shadow-cyan-500/30
+           hover:shadow-xl hover:shadow-fuchsia-500/30 hover:brightness-105 hover:scale-[1.03]
+           active:scale-[0.98] transition-all duration-200 ease-out
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:brightness-100 disabled:hover:translate-y-0 disabled:active:scale-100
+           focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-fuchsia-400/50;
+  }
+
+  .btn-success {
+    @apply bg-gradient-to-br from-emerald-400 to-cyan-500 text-white font-semibold py-3 px-6 rounded-xl
+           shadow-md shadow-cyan-500/25 hover:shadow-lg hover:brightness-110 active:scale-[0.98]
+           transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-cyan-400/40;
+  }
+  .btn-danger {
+    @apply bg-gradient-to-br from-hospital-red to-red-700 text-white font-semibold py-3 px-6 rounded-xl
+           shadow-md shadow-red-600/20 hover:shadow-lg hover:brightness-110 active:scale-[0.98]
+           transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-red-400/40;
+  }
+  .btn-amber {
+    @apply bg-gradient-to-br from-hospital-amber to-amber-700 text-white font-semibold py-3 px-6 rounded-xl
+           shadow-md shadow-amber-600/20 hover:shadow-lg hover:brightness-110 active:scale-[0.98]
+           transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/40;
+  }
+
+  .card {
+    @apply bg-white/90 text-slate-900 backdrop-blur-sm rounded-2xl border border-cyan-300/30 p-6
+           dark:bg-slate-900/75 dark:text-slate-100 dark:border-cyan-400/20;
+    box-shadow: theme('boxShadow.card');
+    transition: box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card:hover {
+    box-shadow: theme('boxShadow.card-hover');
+  }
+
+  .card-interactive {
+    @apply bg-white/90 text-slate-900 backdrop-blur-sm rounded-2xl border border-fuchsia-300/30 p-6
+           dark:bg-slate-900/75 dark:text-slate-100 dark:border-fuchsia-400/20;
+    box-shadow: theme('boxShadow.card');
+    transition:
+      box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card-interactive:hover {
+    box-shadow: theme('boxShadow.card-hover');
+    transform: translateY(-2px);
+  }
+
+  .input-field {
+    @apply w-full border-2 border-cyan-300/35 rounded-xl px-4 py-3 text-lg bg-white/90 text-slate-900
+           placeholder:text-slate-400 dark:border-cyan-400/25 dark:bg-slate-900/80 dark:text-slate-100
+           focus:outline-none focus:border-fuchsia-400 focus:bg-white dark:focus:bg-slate-900 focus:ring-4 focus:ring-fuchsia-500/20
+           transition-all duration-200 hover:border-cyan-400/40;
+  }
+  .select-field {
+    @apply w-full border-2 border-cyan-300/35 rounded-xl px-4 py-3 text-lg bg-white/90 text-slate-900
+           dark:border-cyan-400/25 dark:bg-slate-900/85 dark:text-slate-100
+           focus:outline-none focus:border-fuchsia-400 focus:ring-4 focus:ring-fuchsia-500/20
+           transition-all duration-200 hover:border-cyan-400/40 cursor-pointer
+           appearance-none bg-[length:1.25rem] bg-[right_0.75rem_center] bg-no-repeat;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    padding-right: 2.5rem;
+  }
+
+  .glass-panel {
+    @apply bg-white/75 text-slate-900 backdrop-blur-xl border border-cyan-200/70
+           dark:bg-slate-950/70 dark:text-slate-100 dark:border-cyan-400/20;
+    box-shadow: theme('boxShadow.card');
+  }
+
+  /* Mesh gradient backgrounds */
+  .bg-mesh-patient {
+    background-color: #f4f8ff;
+    background-image:
+      radial-gradient(at 40% 20%, rgba(217, 70, 239, 0.12) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(34, 211, 238, 0.12) 0px, transparent 45%),
+      radial-gradient(at 0% 50%, rgba(139, 92, 246, 0.1) 0px, transparent 50%),
+      radial-gradient(at 80% 90%, rgba(59, 130, 246, 0.08) 0px, transparent 45%);
+  }
+  .dark .bg-mesh-patient {
+    background-color: #0a0f1f;
+    background-image:
+      radial-gradient(at 40% 20%, rgba(217, 70, 239, 0.22) 0px, transparent 50%),
+      radial-gradient(at 80% 0%, rgba(34, 211, 238, 0.2) 0px, transparent 45%),
+      radial-gradient(at 0% 50%, rgba(139, 92, 246, 0.2) 0px, transparent 50%),
+      radial-gradient(at 80% 90%, rgba(59, 130, 246, 0.14) 0px, transparent 45%);
+  }
+
+  .bg-mesh-admin {
+    background-color: #f7f9ff;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(34, 211, 238, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.08) 0px, transparent 45%);
+  }
+  .dark .bg-mesh-admin {
+    background-color: #080c18;
+    background-image:
+      radial-gradient(at 0% 0%, rgba(34, 211, 238, 0.14) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(217, 70, 239, 0.12) 0px, transparent 45%);
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-cyan-300 via-fuchsia-300 to-violet-300 bg-clip-text text-transparent;
+  }
+}
+
+@layer utilities {
+  .stagger-1 {
+    animation-delay: 0.05s;
+  }
+  .stagger-2 {
+    animation-delay: 0.1s;
+  }
+  .stagger-3 {
+    animation-delay: 0.15s;
+  }
+  .stagger-4 {
+    animation-delay: 0.2s;
+  }
+}
