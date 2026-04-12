@@ -5,7 +5,7 @@ import Navbar from '../../components/common/Navbar'
 import Loader from '../../components/common/Loader'
 
 const DashboardPage = () => {
-  const [summary, setSummary] = useState([])
+  const [queues, setQueues] = useState([])
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -13,7 +13,7 @@ const DashboardPage = () => {
   const fetchSummary = useCallback(async () => {
     try {
       const res = await api.get('/queue/all')
-      setSummary(res.data.data)
+      setQueues(res.data.data)
       setLastUpdated(new Date())
     } catch (err) {
       console.error('Dashboard fetch error:', err.message)
@@ -34,8 +34,23 @@ const DashboardPage = () => {
     fetchSummary()
   }
 
-  const totalWaiting = summary.reduce((sum, d) => sum + d.waitingCount, 0)
-  const activeDepts = summary.filter((d) => d.waitingCount > 0).length
+  const totalWaiting = queues.reduce((sum, d) => sum + d.waitingCount, 0)
+  const activeDepts = queues.filter((d) => d.waitingCount > 0).length
+
+  const handleCreateDemo = async () => {
+    try {
+      await api.post('/queue/create', {
+        tokenNumber: `DEMO-${Math.floor(Math.random() * 1000)}`,
+        department: 'General Medicine',
+        priority: 'normal'
+      })
+      fetchSummary()
+      window.location.reload()
+
+    } catch (err) {
+      console.error('Demo create error:', err.message)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-mesh-admin">
@@ -73,6 +88,16 @@ const DashboardPage = () => {
             </span>
             Refresh
           </button>
+          <button
+            type="button"
+            onClick={handleCreateDemo}
+            className="inline-flex items-center gap-2 self-start rounded-xl border-2 border-fuchsia-300/30 dark:border-fuchsia-400/30 bg-white/90 dark:bg-slate-900/90 px-4 py-2.5 text-sm font-semibold
+                       text-slate-700 dark:text-slate-200 shadow-sm transition-all duration-200
+                       hover:border-cyan-400/40 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:-translate-y-0.5"
+          >
+            <span className="text-base" aria-hidden>🚀</span>
+            Demo: Create Token
+          </button>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-10">
@@ -103,9 +128,15 @@ const DashboardPage = () => {
 
         {loading ? (
           <Loader text="Loading department data…" />
+        ) : queues.length === 0 ? (
+          <div className="card-interactive py-20 text-center col-span-full">
+            <span className="text-5xl block mb-4">🏥</span>
+            <p className="text-slate-300 font-display text-xl">No active queues found</p>
+            <p className="text-slate-500 text-sm mt-2">Initialize your departments or use the demo button above.</p>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {summary.map((dept, i) => (
+            {queues.map((dept, i) => (
               <article
                 key={dept.department.id}
                 className={`group relative overflow-hidden rounded-2xl border bg-slate-900/80 backdrop-blur-sm p-5 shadow-card

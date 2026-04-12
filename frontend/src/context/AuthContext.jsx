@@ -9,11 +9,11 @@ export const AuthProvider = ({ children }) => {
 
   // Re-hydrate session on page refresh
   useEffect(() => {
-    const token = localStorage.getItem('adminToken')
+    const token = localStorage.getItem('token')
     if (token) {
       api.get('/auth/me')
         .then((res) => setUser(res.data.user))
-        .catch(() => localStorage.removeItem('adminToken'))
+        .catch(() => localStorage.removeItem('token'))
         .finally(() => setLoading(false))
     } else {
       setLoading(false)
@@ -22,12 +22,12 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password })
-    localStorage.setItem('adminToken', res.data.token)
+    localStorage.setItem('token', res.data.token)
     setUser(res.data.user)
   }
 
   const logout = () => {
-    localStorage.removeItem('adminToken')
+    localStorage.removeItem('token')
     setUser(null)
   }
 

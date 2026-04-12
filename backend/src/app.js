@@ -17,9 +17,10 @@ const app = express();
 
 // ── Global Middleware ──────────────────────────────────────
 app.use(cors({
-  origin: process.env.CLIENT_URL || '*', // Lock down in production
+  origin: '*', // for now
   credentials: true,
 }));
+
 app.use(express.json());           // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true }));
 

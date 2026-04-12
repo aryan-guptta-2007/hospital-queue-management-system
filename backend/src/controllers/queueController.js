@@ -217,4 +217,59 @@ const getPublicDisplay = async (req, res, next) => {
   }
 };
 
-module.exports = { getQueue, callNext, skipToken, completeToken, insertEmergency, getAllQueues, getPublicDisplay };
+// ── POST /api/queue/create ───────────────────────────────
+// Admin — (Direct token creation for testing)
+const createQueue = async (req, res, next) => {
+  try {
+    const { tokenNumber, department, priority } = req.body;
+
+    let dept = await Department.findOne({
+      $or: [{ name: department }, { code: department }]
+    });
+
+    if (!dept) {
+      // Fallback to first department if search fails
+      dept = await Department.findOne();
+      if (!dept) throw createError('Please run seed script first', 400);
+    }
+
+    // Use priority map
+    const priorityValue = priority === 'emergency' ? PRIORITY.EMERGENCY :
+                         priority === 'high' ? PRIORITY.HIGH :
+                         PRIORITY.NORMAL;
+
+    // Create a dummy patient for this test token
+    const patient = await Patient.create({
+      name: `Demo Patient for ${tokenNumber}`,
+      phone: '000-000-0000',
+      priority: priorityValue
+    });
+
+    const token = await Token.create({
+      tokenNumber: tokenNumber || `DEMO-${Math.floor(Math.random() * 100)}`,
+      sequenceNumber: 1, // simplified for demo
+      patient: patient._id,
+      department: dept._id,
+      priority: priorityValue,
+      status: TOKEN_STATUS.WAITING
+    });
+
+    broadcast('QUEUE_UPDATE', dept._id);
+
+    res.status(201).json({ success: true, data: token });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = {
+  getQueue,
+  callNext,
+  skipToken,
+  completeToken,
+  insertEmergency,
+  getAllQueues,
+  getPublicDisplay,
+  createQueue
+};
+
