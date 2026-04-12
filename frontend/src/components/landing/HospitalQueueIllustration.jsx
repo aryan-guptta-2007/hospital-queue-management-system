@@ -24,15 +24,17 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
     return () => clearInterval(interval)
   }, [])
 
-  const displayQueue = queue && queue.map((dept) => ({
-    token: dept.currentToken || `${dept.department.code}-000`,
-    type: dept.department.name,
-    waiting: dept.waitingCount,
+  const safeQueue = Array.isArray(queue) ? queue : []
+  
+  const displayQueue = safeQueue.map((dept) => ({
+    token: dept.currentToken || `${dept?.department?.code || 'X'}-000`,
+    type: dept?.department?.name || 'Unknown',
+    waiting: dept.waitingCount || 0,
     dot: dept.waitingCount > 5 ? 'bg-red-500' : 'bg-blue-500',
   }))
 
-  const servingToken = queue.length > 0 ? queue[0].currentToken || '—' : '—'
-  const servingDept = queue.length > 0 ? queue[0].department.name : 'Waiting...'
+  const servingToken = safeQueue.length > 0 ? safeQueue[0].currentToken || '—' : '—'
+  const servingDept = safeQueue.length > 0 ? safeQueue[0]?.department?.name || 'Waiting...' : 'Waiting...'
 
   return (
     <div
