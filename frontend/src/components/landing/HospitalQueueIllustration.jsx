@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react'
+import api from '../../api/axios'
 
 const HospitalQueueIllustration = ({ isDark = false }) => {
   const [queue, setQueue] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchQueue = () => {
-      fetch("https://hospital-queue-management-system-66c6.onrender.com/api/queue/all")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.success) {
-            setQueue(data.data)
-          }
-          setLoading(false)
-        })
-        .catch((err) => {
-          console.error('API Error:', err)
-          setLoading(false)
-        })
+    const fetchQueue = async () => {
+      try {
+        const res = await api.get('/queue/all')
+        if (res.data.success) {
+          setQueue(res.data.data)
+        }
+      } catch (err) {
+        console.error('API Error:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchQueue()
@@ -25,23 +24,15 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
     return () => clearInterval(interval)
   }, [])
 
-  // Fallback to demo data if API is empty or failing, to maintain aesthetics
-  const displayQueue =
-    queue.length > 0
-      ? queue.map((dept) => ({
-          token: dept.currentToken || `${dept.department.code}-000`,
-          type: dept.department.name,
-          waiting: dept.waitingCount,
-          dot: dept.waitingCount > 5 ? 'bg-red-500' : 'bg-blue-500',
-        }))
-      : [
-          { token: 'A-043', type: 'Normal', dot: 'bg-blue-500' },
-          { token: 'A-044', type: 'Senior', dot: 'bg-violet-500' },
-          { token: 'E-001', type: 'Emergency', dot: 'bg-red-500' },
-        ]
+  const displayQueue = queue.map((dept) => ({
+    token: dept.currentToken || `${dept.department.code}-000`,
+    type: dept.department.name,
+    waiting: dept.waitingCount,
+    dot: dept.waitingCount > 5 ? 'bg-red-500' : 'bg-blue-500',
+  }))
 
-  const servingToken = queue.length > 0 ? queue[0].currentToken || 'A-000' : 'A-042'
-  const servingDept = queue.length > 0 ? queue[0].department.name : 'General Medicine'
+  const servingToken = queue.length > 0 ? queue[0].currentToken || '—' : '—'
+  const servingDept = queue.length > 0 ? queue[0].department.name : 'Waiting...'
 
   return (
     <div

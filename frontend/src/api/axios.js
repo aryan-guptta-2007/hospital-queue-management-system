@@ -1,12 +1,9 @@
-import axios from 'axios'
+import axios from "axios";
 
-// In dev, Vite proxy forwards /api → http://localhost:5001
-// In production, set VITE_API_URL in your .env
 const api = axios.create({
-  baseURL: 'https://hospital-queue-management-system-66c6.onrender.com/api',
-  headers: { 'Content-Type': 'application/json' },
-  timeout: 8000,
-})
+  baseURL: "https://hospital-queue-management-system-66c6.onrender.com/api",
+  withCredentials: false
+});
 
 // Attach JWT token to every request if present
 api.interceptors.request.use((config) => {
@@ -19,9 +16,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.code === 'ECONNABORTED') {
-      err.message = 'Request timed out. Please check if backend/database is running.'
-    }
     if (err.response?.status === 401) {
       localStorage.removeItem('adminToken')
       window.location.href = '/admin/login'
@@ -30,4 +24,4 @@ api.interceptors.response.use(
   }
 )
 
-export default api
+export default api;
