@@ -1,17 +1,20 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import TokenForm from '../../components/patient/TokenForm'
 import TokenCard from '../../components/patient/TokenCard'
 import QueueStatus from '../../components/patient/QueueStatus'
 import { AnimatePresence, motion } from 'framer-motion'
+import LanguageSwitcher from '../../components/common/LanguageSwitcher'
 
 const steps = [
-  { id: 'form', label: 'Register' },
-  { id: 'token', label: 'Token' },
-  { id: 'track', label: 'Track' },
+  { id: 'form', labelKey: 'home.stepRegister' },
+  { id: 'token', labelKey: 'home.stepToken' },
+  { id: 'track', labelKey: 'home.stepTrack' },
 ]
 
 const HomePage = () => {
+  const { t } = useTranslation()
   const [stage, setStage] = useState('form')
   const [tokenData, setTokenData] = useState(null)
 
@@ -39,8 +42,10 @@ const HomePage = () => {
         to="/"
         className="absolute left-4 top-4 z-20 inline-flex items-center gap-2 rounded-xl border border-cyan-300/30 dark:border-cyan-400/30 bg-white/80 dark:bg-slate-950/80 px-3 py-2 text-sm font-bold text-slate-700 dark:text-slate-200 shadow-sm backdrop-blur-md transition-all hover:text-cyan-500 dark:hover:text-cyan-300 focus-visible:outline focus-visible:ring-2 focus-visible:ring-fuchsia-400/40 sm:left-6 sm:top-5"
       >
-        ← Home
+        {t('common.home')}
       </Link>
+
+      <LanguageSwitcher className="absolute right-4 top-4 z-20 shadow-sm sm:right-6 sm:top-5" />
       {/* Ambient orbs */}
       <div
         className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-fuchsia-500/20 blur-3xl animate-float"
@@ -62,10 +67,10 @@ const HomePage = () => {
           🏥
         </div>
         <h1 className="font-display text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          <span className="text-gradient">Hospital Queue</span>
+          <span className="text-gradient">{t('home.hospital')}</span>
         </h1>
         <p className="text-slate-600 dark:text-slate-300 mt-2 text-base font-medium">
-          Government District Hospital · Quick token & live status
+          {t('home.subtitle')}
         </p>
       </header>
 
@@ -85,10 +90,13 @@ const HomePage = () => {
                       transition-all duration-300 ease-spring
                       ${active ? 'bg-gradient-to-br from-hospital-blue to-indigo-600 text-white shadow-glow scale-110 ring-4 ring-blue-400/25' : ''}
                       ${done && !active ? 'bg-cyan-500 text-white shadow-md shadow-cyan-500/30' : ''}
-                      ${!done && !active ? 'bg-slate-200 text-slate-400' : ''}`}
+                      ${!done && !active ? 'bg-slate-200 text-slate-600' : ''}`}
                   >
                     {done ? (
-                      <span className="text-lg motion-reduce:animate-none animate-scale-in" aria-hidden>
+                      <span
+                        className="text-lg motion-reduce:animate-none animate-scale-in"
+                        aria-hidden
+                      >
                         ✓
                       </span>
                     ) : (
@@ -103,9 +111,9 @@ const HomePage = () => {
                   </div>
                   <span
                     className={`mt-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate max-w-full
-                      ${active ? 'text-cyan-300' : done ? 'text-cyan-300' : 'text-slate-400'}`}
+                      ${active ? 'text-cyan-700 dark:text-cyan-300' : done ? 'text-cyan-700 dark:text-cyan-300' : 'text-slate-500 dark:text-slate-400'}`}
                   >
-                    {s.label}
+                    {t(s.labelKey)}
                   </span>
                 </div>
                 {i < steps.length - 1 && (
@@ -125,9 +133,11 @@ const HomePage = () => {
             {stage === 'form' && (
               <motion.div key="stage-form" {...stageTransition} className="space-y-2">
                 <h2 className="font-display text-xl font-bold text-slate-900 dark:text-slate-100 mb-2 text-center">
-                  Register &amp; get your token
+                  {t('home.registerHeading')}
                 </h2>
-                <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">Please enter your details clearly for faster service.</p>
+                <p className="text-center text-sm text-slate-600 dark:text-slate-300 mb-5">
+                  {t('home.registerHint')}
+                </p>
                 <TokenForm onSuccess={handleTokenGenerated} />
               </motion.div>
             )}
@@ -140,7 +150,7 @@ const HomePage = () => {
 
             {stage === 'track' && tokenData && (
               <motion.div key="stage-track" {...stageTransition}>
-                <QueueStatus tokenNumber={tokenData.tokenNumber} onBack={handleReset} />
+                <QueueStatus publicCode={tokenData.publicCode} onBack={handleReset} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -148,7 +158,7 @@ const HomePage = () => {
       </div>
 
       <p className="relative mt-10 text-center text-slate-600 dark:text-slate-300 text-sm max-w-sm motion-safe:animate-fade-in motion-reduce:animate-none">
-        Need help? Please visit the help desk — we&apos;re here for you.
+        {t('home.helpText')}
       </p>
     </div>
   )

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import api from '../../api/axios'
 import Loader from '../common/Loader'
 
 const TokenForm = ({ onSuccess }) => {
+  const { t } = useTranslation()
   const [departments, setDepartments] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -19,9 +21,9 @@ const TokenForm = ({ onSuccess }) => {
     api
       .get('/departments')
       .then((res) => setDepartments(res.data.data))
-      .catch((err) => setError(err.message || 'Could not load departments. Please refresh.'))
+      .catch(() => setError(t('form.errorDepartments')))
       .finally(() => setLoading(false))
-  }, [])
+  }, [t])
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -30,8 +32,8 @@ const TokenForm = ({ onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.name.trim()) return setError('Please enter your name.')
-    if (!form.departmentId) return setError('Please select a department.')
+    if (!form.name.trim()) return setError(t('form.errorName'))
+    if (!form.departmentId) return setError(t('form.errorDepartment'))
 
     setSubmitting(true)
     setError('')
@@ -44,19 +46,19 @@ const TokenForm = ({ onSuccess }) => {
       })
       onSuccess(res.data.data)
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong. Please try again.')
+      setError(err.response?.data?.message || t('form.errorGeneric'))
     } finally {
       setSubmitting(false)
     }
   }
 
-  if (loading) return <Loader text="Loading departments…" />
+  if (loading) return <Loader text={t('form.loadingDepartments')} />
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div className="group">
         <label className="block text-base font-bold text-slate-200 mb-2" htmlFor="patient-name">
-          Full name <span className="text-red-500">*</span>
+          {t('form.fullName')} <span className="text-red-500">*</span>
         </label>
         <input
           id="patient-name"
@@ -64,7 +66,7 @@ const TokenForm = ({ onSuccess }) => {
           name="name"
           value={form.name}
           onChange={handleChange}
-          placeholder="Enter your full name"
+          placeholder={t('form.namePlaceholder')}
           className="input-field"
           autoComplete="name"
         />
@@ -72,10 +74,16 @@ const TokenForm = ({ onSuccess }) => {
 
       <div>
         <label className="block text-base font-bold text-slate-200 mb-2" htmlFor="patient-dept">
-          Department <span className="text-red-500">*</span>
+          {t('form.department')} <span className="text-red-500">*</span>
         </label>
-        <select id="patient-dept" name="departmentId" value={form.departmentId} onChange={handleChange} className="select-field">
-          <option value="">Select department</option>
+        <select
+          id="patient-dept"
+          name="departmentId"
+          value={form.departmentId}
+          onChange={handleChange}
+          className="select-field"
+        >
+          <option value="">{t('form.selectDepartment')}</option>
           {departments.map((d) => (
             <option key={d._id} value={d._id}>
               {d.name}
@@ -86,8 +94,10 @@ const TokenForm = ({ onSuccess }) => {
 
       <div>
         <label className="block text-base font-bold text-slate-200 mb-2" htmlFor="patient-age">
-          Age{' '}
-          <span className="text-slate-400 font-medium text-sm">(optional — seniors prioritised)</span>
+          {t('form.age')}{' '}
+          <span className="text-slate-500 dark:text-slate-400 font-medium text-sm">
+            {t('form.ageHint')}
+          </span>
         </label>
         <input
           id="patient-age"
@@ -95,7 +105,7 @@ const TokenForm = ({ onSuccess }) => {
           name="age"
           value={form.age}
           onChange={handleChange}
-          placeholder="e.g. 65"
+          placeholder={t('form.agePlaceholder')}
           min="0"
           max="150"
           className="input-field"
@@ -104,7 +114,10 @@ const TokenForm = ({ onSuccess }) => {
 
       <div>
         <label className="block text-base font-bold text-slate-200 mb-2" htmlFor="patient-phone">
-          Mobile <span className="text-slate-400 font-medium text-sm">(optional)</span>
+          {t('form.mobile')}{' '}
+          <span className="text-slate-500 dark:text-slate-400 font-medium text-sm">
+            {t('form.mobileHint')}
+          </span>
         </label>
         <input
           id="patient-phone"
@@ -112,7 +125,7 @@ const TokenForm = ({ onSuccess }) => {
           name="phone"
           value={form.phone}
           onChange={handleChange}
-          placeholder="e.g. 9876543210"
+          placeholder={t('form.mobilePlaceholder')}
           className="input-field"
           autoComplete="tel"
         />
@@ -132,10 +145,10 @@ const TokenForm = ({ onSuccess }) => {
         {submitting ? (
           <span className="inline-flex items-center justify-center gap-2">
             <span className="h-6 w-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Generating…
+            {t('form.submitting')}
           </span>
         ) : (
-          'Get my token'
+          t('form.submit')
         )}
       </button>
     </form>

@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const LoginPage = () => {
   const { login } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [form, setForm] = useState({ email: '', password: '' })
-  const [error, setError] = useState('')
+  const [error, setError] = useState(
+    searchParams.get('expired') ? 'Session expired. Please sign in again.' : ''
+  )
   const [loading, setLoading] = useState(false)
 
   const handleSubmit = async (e) => {
@@ -103,7 +106,7 @@ const LoginPage = () => {
         </form>
 
         <p className="text-center text-xs text-slate-500 dark:text-slate-300 mt-8 font-medium">
-          Demo · admin@hospital.com / admin123
+          Default account · admin@hospital.com
         </p>
       </div>
     </div>

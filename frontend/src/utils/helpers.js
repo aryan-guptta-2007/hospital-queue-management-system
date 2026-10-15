@@ -1,10 +1,38 @@
-// Format minutes into human-readable string
-export const formatWaitTime = (minutes) => {
-  if (!minutes || minutes <= 0) return 'Soon'
-  if (minutes < 60) return `~${minutes} min`
+// Format a number of minutes into a human-readable string.
+// `t` is optional: the patient screens pass it, the staff screens do not and
+// keep the English wording they have always had.
+const formatMinutes = (minutes, t) => {
+  if (minutes < 60) return t ? t('wait.minutes', { value: minutes }) : `${minutes} min`
+
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
-  return m > 0 ? `~${h}h ${m}m` : `~${h}h`
+
+  if (m > 0) return t ? t('wait.hoursMinutes', { hours: h, minutes: m }) : `${h}h ${m}m`
+
+  return t ? t('wait.hours', { hours: h }) : `${h}h`
+}
+
+/**
+ * Formats a wait estimate. Accepts either a plain number of minutes or the
+ * backend's { min, max } range, which reads as "15–25 min".
+ */
+export const formatWaitTime = (estimate, t) => {
+  const soon = () => (t ? t('wait.soon') : 'Soon')
+  const approx = (value) => (t ? t('wait.approx', { value }) : `~${value}`)
+
+  if (estimate && typeof estimate === 'object') {
+    const { min, max } = estimate
+    if (!max || max <= 0) return soon()
+    // A zero-width band (a very consistent department) reads as one number
+    if (!min || min <= 0 || min === max) return approx(formatMinutes(max, t))
+    // Only the larger figure carries the unit: "15–25 min"
+    const low = max < 60 ? String(min) : formatMinutes(min, t)
+    const high = formatMinutes(max, t)
+    return t ? t('wait.range', { low, high }) : `${low}–${high}`
+  }
+
+  if (!estimate || estimate <= 0) return soon()
+  return approx(formatMinutes(estimate, t))
 }
 
 // Priority badge config

@@ -83,7 +83,9 @@ const QueueTable = ({ queue, selectedId, onSelect }) => {
                 </td>
 
                 <td className="px-4 py-3.5 text-slate-600 dark:text-slate-300 font-semibold tabular-nums">
-                  {token.status === 'waiting' ? formatWaitTime(token.estimatedWaitTime) : '—'}
+                  {token.status === 'waiting'
+                    ? formatWaitTime(token.estimatedWaitRange ?? token.estimatedWaitTime)
+                    : '—'}
                 </td>
 
                 <td className="px-4 py-3.5 text-slate-400 font-medium tabular-nums">

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 
-const CurrentToken = ({ token, waitingCount }) => (
+const CurrentToken = ({ token, waitingCount, onRecall, loading }) => (
   <div className="relative overflow-hidden rounded-2xl p-6 sm:p-8 text-white shadow-card-hover bg-gradient-to-br from-cyan-700 via-blue-700 to-fuchsia-800">
     <div
       className="pointer-events-none absolute inset-0 opacity-30"
@@ -31,6 +31,20 @@ const CurrentToken = ({ token, waitingCount }) => (
               {token.tokenNumber}
             </h2>
             <p className="text-cyan-100 mt-2 text-lg sm:text-xl font-semibold truncate max-w-full">{token.patient?.name}</p>
+            <button
+              type="button"
+              onClick={onRecall}
+              disabled={loading}
+              title="Announce this token again"
+              className="relative mt-4 inline-flex items-center gap-2 rounded-xl border-2 border-white/50 bg-white/15 px-4 py-2
+                         text-sm font-bold text-white backdrop-blur-md transition-all duration-200
+                         hover:bg-white/25 hover:-translate-y-0.5 active:translate-y-0
+                         disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0
+                         focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
+            >
+              <span aria-hidden>🔔</span>
+              Recall
+            </button>
           </motion.div>
         ) : (
           <h2 className="font-display text-2xl sm:text-3xl font-bold text-cyan-100/80">No active token</h2>

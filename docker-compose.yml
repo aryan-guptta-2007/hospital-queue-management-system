@@ -1,0 +1,77 @@
+name: hospital-queue
+
+services:
+  # MongoDB as a single-node replica set. Not for durability here, but because
+  # the app writes a Patient and its Token in a transaction when the deployment
+  # supports one — a standalone mongod cannot.
+  mongo:
+    image: mongo:7
+    command: ['--replSet', 'rs0', '--bind_ip_all']
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      # Initiates the replica set on the first run and reports healthy once it
+      # has a primary, so nothing else starts against a half-ready database
+      test: >
+        mongosh --quiet --eval "
+          try { rs.status().ok }
+          catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: 'mongo:27017' }] }).ok }
+        "
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      NODE_ENV: production
+      PORT: 5001
+      MONGO_URI: mongodb://mongo:27017/hospital_queue?replicaSet=rs0
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env before starting}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      # nginx serves the browser, so that is the only origin the API answers
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:8080}
+      AVG_CONSULTATION_TIME: ${AVG_CONSULTATION_TIME:-10}
+      SMS_PROVIDER: ${SMS_PROVIDER:-console}
+      NOTIFY_AT_POSITION: ${NOTIFY_AT_POSITION:-3}
+      TOKEN_RATE_LIMIT_MAX: ${TOKEN_RATE_LIMIT_MAX:-5}
+      TOKEN_RATE_LIMIT_WINDOW_MIN: ${TOKEN_RATE_LIMIT_WINDOW_MIN:-10}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      # Exposed for the API docs at http://localhost:5001/api/docs
+      - '5001:5001'
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '${WEB_PORT:-8080}:80'
+    restart: unless-stopped
+
+  # One-off: creates the indexes and the first admin.
+  #   docker compose --profile setup run --rm setup
+  setup:
+    build:
+      context: ./backend
+    profiles: ['setup']
+    command: ['sh', '-c', 'npm run migrate:indexes && npm run seed']
+    environment:
+      NODE_ENV: production
+      MONGO_URI: mongodb://mongo:27017/hospital_queue?replicaSet=rs0
+      SEED_ADMIN_PASSWORD: ${SEED_ADMIN_PASSWORD:?set SEED_ADMIN_PASSWORD in .env to seed the first admin}
+      SEED_ADMIN_EMAIL: ${SEED_ADMIN_EMAIL:-admin@hospital.com}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:

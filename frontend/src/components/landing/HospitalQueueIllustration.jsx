@@ -3,7 +3,7 @@ import api from '../../api/axios'
 
 const HospitalQueueIllustration = ({ isDark = false }) => {
   const [queue, setQueue] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchQueue = async () => {

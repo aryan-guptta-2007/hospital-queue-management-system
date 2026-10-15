@@ -1,6 +1,6 @@
 import { PRIORITY_CONFIG } from '../../utils/helpers'
 
-const Badge = ({ priority }) => {
+const Badge = ({ priority, label }) => {
   const config = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG[1]
   return (
     <span
@@ -8,7 +8,7 @@ const Badge = ({ priority }) => {
     >
       {priority === 3 && <span aria-hidden>🚨</span>}
       {priority === 2 && <span aria-hidden>👴</span>}
-      {config.label}
+      {label ?? config.label}
     </span>
   )
 }

@@ -26,13 +26,20 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user)
   }
 
+  // Re-read the current user (e.g. after clearing mustChangePassword)
+  const refreshUser = async () => {
+    const res = await api.get('/auth/me')
+    setUser(res.data.user)
+    return res.data.user
+  }
+
   const logout = () => {
     localStorage.removeItem('token')
     setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

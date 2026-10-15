@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api from '../../api/axios'
 import Navbar from '../../components/common/Navbar'
 import Loader from '../../components/common/Loader'
@@ -6,12 +7,18 @@ import CurrentToken from '../../components/admin/CurrentToken'
 import ActionButtons from '../../components/admin/ActionButtons'
 import QueueTable from '../../components/admin/QueueTable'
 import DepartmentFilter from '../../components/admin/DepartmentFilter'
+import SkippedList from '../../components/admin/SkippedList'
 import { useQueueSocket } from '../../context/QueueContext'
 
 const QueuePage = () => {
+  const [searchParams, setSearchParams] = useSearchParams()
   const [departments, setDepartments] = useState([])
-  const [activeDeptId, setActiveDeptId] = useState('')
-  const [queueData, setQueueData] = useState({ serving: null, waiting: [], waitingCount: 0 })
+  const [queueData, setQueueData] = useState({
+    serving: null,
+    waiting: [],
+    waitingCount: 0,
+    skipped: [],
+  })
   const [selectedTokenId, setSelectedTokenId] = useState(null)
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
@@ -26,28 +33,53 @@ const QueuePage = () => {
     window.setTimeout(() => setToast(null), 3200)
   }
 
-  const { lastEvent } = useQueueSocket()
+  const { lastEvent, subscribe } = useQueueSocket()
 
   useEffect(() => {
-    api.get('/departments').then((res) => {
-      const depts = res.data.data
-      setDepartments(depts)
-      if (depts.length > 0) setActiveDeptId(depts[0]._id)
-    })
+    api.get('/departments').then((res) => setDepartments(res.data.data || []))
   }, [])
+
+  // ?dept=<id> (from the dashboard) wins, otherwise the first department
+  const activeDeptId = useMemo(() => {
+    if (departments.length === 0) return ''
+    const requested = departments.find((d) => d._id === searchParams.get('dept'))
+    return requested?._id || departments[0]._id
+  }, [departments, searchParams])
+
+  // The URL is the single source of truth for which queue is on screen
+  const handleDepartmentChange = (departmentId) =>
+    setSearchParams({ dept: departmentId }, { replace: true })
+
+  // Lets a slow answer for a department the user has already left be dropped
+  const activeDeptRef = useRef('')
+  activeDeptRef.current = activeDeptId
+  const requestSeq = useRef(0)
 
   const fetchQueue = useCallback(async () => {
     if (!activeDeptId) return
+
+    const seq = requestSeq.current + 1
+    requestSeq.current = seq
+    const requestedDept = activeDeptId
+
     try {
       const res = await api.get(`/queue/${activeDeptId}`)
+
+      // A newer request, or a department switch, has superseded this answer
+      if (seq !== requestSeq.current || requestedDept !== activeDeptRef.current) return
+
       setQueueData(res.data.data)
       setLastUpdated(new Date())
     } catch (err) {
+      if (seq !== requestSeq.current) return
       console.error('Queue fetch error:', err.message)
     } finally {
-      setLoading(false)
+      if (seq === requestSeq.current) setLoading(false)
     }
   }, [activeDeptId])
+
+  // Watch only this department's feed
+  useEffect(() => subscribe(activeDeptId), [subscribe, activeDeptId])
 
   useEffect(() => {
     setLoading(true)
@@ -59,7 +91,18 @@ const QueuePage = () => {
 
   useEffect(() => {
     if (!lastEvent || !activeDeptId) return
-    const queueEvents = ['NEXT_TOKEN', 'TOKEN_SKIPPED', 'TOKEN_COMPLETED', 'EMERGENCY_INSERT', 'NEW_TOKEN']
+    // Another department's event is none of this screen's business
+    if (String(lastEvent.departmentId) !== String(activeDeptId)) return
+
+    const queueEvents = [
+      'NEXT_TOKEN',
+      'TOKEN_SKIPPED',
+      'TOKEN_COMPLETED',
+      'TOKEN_REQUEUED',
+      'TOKEN_RECALLED',
+      'EMERGENCY_INSERT',
+      'NEW_TOKEN',
+    ]
     if (queueEvents.includes(lastEvent.type)) fetchQueue()
   }, [lastEvent, fetchQueue, activeDeptId])
 
@@ -68,7 +111,11 @@ const QueuePage = () => {
     try {
       switch (action) {
         case 'next':
-          await api.post(`/queue/${activeDeptId}/next`)
+          // Send the serving token this screen shows, so a stale screen cannot
+          // end a consultation somebody else already moved on
+          await api.post(`/queue/${activeDeptId}/next`, {
+            currentServingId: queueData.serving?._id ?? null,
+          })
           showToast('Next patient called', 'success')
           setSelectedTokenId(null)
           break
@@ -81,10 +128,21 @@ const QueuePage = () => {
           break
 
         case 'complete':
-          if (!payload) return showToast('Select a patient first', 'error')
-          await api.post(`/queue/token/${payload}/complete`)
+          // Always the token on screen as now serving, never a selected row
+          if (!queueData.serving?._id) return showToast('Nobody is being served right now', 'error')
+          await api.post(`/queue/token/${queueData.serving._id}/complete`)
           showToast('Consultation completed', 'success')
           setSelectedTokenId(null)
+          break
+
+        case 'requeue':
+          await api.post(`/queue/token/${payload}/requeue`)
+          showToast('Patient moved back into the queue', 'success')
+          break
+
+        case 'recall':
+          await api.post(`/queue/${activeDeptId}/recall`)
+          showToast('Token announced again', 'success')
           break
 
         case 'emergency':
@@ -97,6 +155,8 @@ const QueuePage = () => {
       }
       await fetchQueue()
     } catch (err) {
+      // 409 = the queue moved on under us; resync before telling the user
+      if (err.response?.status === 409) await fetchQueue()
       showToast(err.response?.data?.message || 'Action failed. Try again.', 'error')
     } finally {
       setActionLoading(false)
@@ -136,7 +196,11 @@ const QueuePage = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <DepartmentFilter departments={departments} selected={activeDeptId} onChange={setActiveDeptId} />
+            <DepartmentFilter
+              departments={departments}
+              selected={activeDeptId}
+              onChange={handleDepartmentChange}
+            />
             <button
               type="button"
               onClick={fetchQueue}
@@ -156,7 +220,12 @@ const QueuePage = () => {
           <Loader text="Loading queue…" />
         ) : (
           <>
-            <CurrentToken token={queueData.serving} waitingCount={queueData.waitingCount} />
+            <CurrentToken
+              token={queueData.serving}
+              waitingCount={queueData.waitingCount}
+              onRecall={() => handleAction('recall')}
+              loading={actionLoading}
+            />
 
             <section className="card">
               <h2 className="font-display text-lg font-bold text-slate-900 dark:text-slate-100 mb-5 flex items-center gap-2">
@@ -167,7 +236,7 @@ const QueuePage = () => {
               </h2>
               <ActionButtons
                 selectedToken={selectedTokenId}
-                departmentId={activeDeptId}
+                servingToken={queueData.serving?._id || null}
                 onAction={handleAction}
                 loading={actionLoading}
               />
@@ -194,6 +263,12 @@ const QueuePage = () => {
               </div>
               <QueueTable queue={queueData.waiting} selectedId={selectedTokenId} onSelect={setSelectedTokenId} />
             </section>
+
+            <SkippedList
+              skipped={queueData.skipped}
+              onRequeue={(tokenId) => handleAction('requeue', tokenId)}
+              loading={actionLoading}
+            />
           </>
         )}
       </main>

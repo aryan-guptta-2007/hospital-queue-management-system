@@ -39,6 +39,16 @@ const Navbar = () => {
           <NavLink to="/admin/queue" className={navLinkClass}>
             Queue
           </NavLink>
+          {user?.role === 'admin' && (
+            <>
+              <NavLink to="/admin/analytics" className={navLinkClass}>
+                Analytics
+              </NavLink>
+              <NavLink to="/admin/audit" className={navLinkClass}>
+                Audit
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">

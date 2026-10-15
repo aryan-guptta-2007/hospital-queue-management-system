@@ -24,6 +24,13 @@ const departmentSchema = new mongoose.Schema(
       default: 10,
       min: [1, 'Consultation time must be at least 1 minute'],
     },
+    // How many doctors/counters see patients in parallel in this department.
+    // Wait estimates divide the queue ahead by this.
+    activeCounters: {
+      type: Number,
+      default: 1,
+      min: [1, 'A department needs at least one counter'],
+    },
     isActive: {
       type: Boolean,
       default: true,

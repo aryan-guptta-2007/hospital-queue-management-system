@@ -1,29 +1,44 @@
-const Token = require('../models/Token');
+const crypto = require('crypto');
+const Counter = require('../models/Counter');
+const { getISTDateString } = require('./date');
+
+// 32 unambiguous characters — no I/L/O, so a patient can read a code aloud.
+// Exactly 256/32 = 8 bytes map to each character, so modulo stays unbiased.
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ023456789';
+const CODE_LENGTH = 8;
 
 /**
- * Generates the next token number for a department on today's date.
+ * Generates the next token number for a department on today's IST date.
  * Format: "<DEPT_CODE>-<3-digit-sequence>"  e.g. "OPD-001", "CARD-042"
  *
- * Tokens reset to 001 every day (counts only today's tokens).
+ * The sequence restarts at 1 each IST day. It comes from an atomic $inc on a
+ * per-department-per-day counter, so concurrent requests never share a number.
  */
 const generateToken = async (departmentCode, departmentId) => {
-  // Start of today (midnight)
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
+  const serviceDate = getISTDateString();
 
-  // Count how many tokens were generated for this dept today
-  const todayCount = await Token.countDocuments({
-    department: departmentId,
-    createdAt: { $gte: startOfDay },
-  });
+  const counter = await Counter.findOneAndUpdate(
+    { _id: `${departmentId}:${serviceDate}` },
+    { $inc: { seq: 1 } },
+    { upsert: true, new: true }
+  );
 
-  const sequenceNumber = todayCount + 1;
+  const sequenceNumber = counter.seq;
 
   // Zero-pad to 3 digits: 1 → "001", 42 → "042"
   const paddedSeq = String(sequenceNumber).padStart(3, '0');
   const tokenNumber = `${departmentCode.toUpperCase()}-${paddedSeq}`;
 
-  return { tokenNumber, sequenceNumber };
+  return { tokenNumber, sequenceNumber, serviceDate };
 };
 
-module.exports = { generateToken };
+/**
+ * Random, unguessable handle a patient uses to reopen their own status page.
+ * The token number itself is guessable (OPD-001), so it must not be the key.
+ */
+const generatePublicCode = () =>
+  Array.from(crypto.randomBytes(CODE_LENGTH))
+    .map((byte) => CODE_ALPHABET[byte % CODE_ALPHABET.length])
+    .join('');
+
+module.exports = { generateToken, generatePublicCode };

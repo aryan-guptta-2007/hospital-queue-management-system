@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
+import './locales/i18n'
 import './index.css'
 
 const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('hq-landing-theme') : null

@@ -1,9 +1,23 @@
+import { useTranslation } from 'react-i18next'
 import Badge from '../common/Badge'
 import { formatWaitTime } from '../../utils/helpers'
 import { motion } from 'framer-motion'
+import { QRCodeSVG } from 'qrcode.react'
 
 const TokenCard = ({ tokenData, onCheckStatus }) => {
-  const { tokenNumber, department, patient, position, estimatedWaitTime } = tokenData
+  const { t } = useTranslation()
+  const {
+    tokenNumber,
+    publicCode,
+    department,
+    patient,
+    position,
+    estimatedWaitTime,
+    estimatedWaitRange,
+  } = tokenData
+
+  // Absolute URL so the QR works when scanned on the patient's own phone
+  const trackUrl = publicCode ? `${window.location.origin}/track/${publicCode}` : null
 
   return (
     <motion.div
@@ -25,7 +39,7 @@ const TokenCard = ({ tokenData, onCheckStatus }) => {
           >
             ✓
           </span>
-          Token generated
+          {t('token.generated')}
         </p>
       </motion.div>
 
@@ -39,7 +53,9 @@ const TokenCard = ({ tokenData, onCheckStatus }) => {
           className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl"
           aria-hidden
         />
-        <p className="relative text-cyan-100/90 text-sm font-bold uppercase tracking-[0.2em] mb-2">Your token</p>
+        <p className="relative text-cyan-100/90 text-sm font-bold uppercase tracking-[0.2em] mb-2">
+          {t('token.yourToken')}
+        </p>
         <h1 className="relative font-display text-6xl sm:text-7xl font-black tracking-tight drop-shadow-lg tabular-nums">
           {tokenNumber}
         </h1>
@@ -48,43 +64,85 @@ const TokenCard = ({ tokenData, onCheckStatus }) => {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="card-interactive text-center py-4">
-          <p className="text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">Position</p>
-          <p className="font-display text-4xl font-extrabold text-cyan-300 tabular-nums">{position ?? '—'}</p>
-          <p className="text-slate-400 text-sm font-medium">in queue</p>
+          <p className="text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">
+            {t('token.position')}
+          </p>
+          <p className="font-display text-4xl font-extrabold text-cyan-300 tabular-nums">
+            {position ?? '—'}
+          </p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+            {t('token.inQueue')}
+          </p>
         </div>
         <div className="card-interactive text-center py-4">
-          <p className="text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">Est. wait</p>
-          <p className="font-display text-4xl font-extrabold text-fuchsia-300 tabular-nums">
-            {formatWaitTime(estimatedWaitTime)}
+          <p className="text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">
+            {t('token.estimatedWait')}
           </p>
-          <p className="text-slate-400 text-sm font-medium">approx.</p>
+          <p className="font-display text-4xl font-extrabold text-fuchsia-300 tabular-nums">
+            {formatWaitTime(estimatedWaitRange ?? estimatedWaitTime, t)}
+          </p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
+            {t('token.approximately')}
+          </p>
         </div>
       </div>
 
       <div className="card text-left space-y-3">
         <div className="flex justify-between items-center gap-3">
-          <span className="text-slate-600 dark:text-slate-300 font-medium">Patient</span>
-          <span className="font-bold text-slate-900 dark:text-slate-100 text-right">{patient?.name}</span>
+          <span className="text-slate-600 dark:text-slate-300 font-medium">
+            {t('token.patient')}
+          </span>
+          <span className="font-bold text-slate-900 dark:text-slate-100 text-right">
+            {patient?.name}
+          </span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-slate-600 dark:text-slate-300 font-medium">Priority</span>
-          <Badge priority={patient?.priority} />
+          <span className="text-slate-600 dark:text-slate-300 font-medium">
+            {t('token.priority')}
+          </span>
+          <Badge priority={patient?.priority} label={t(`priority.${patient?.priority || 1}`)} />
         </div>
         <div className="flex justify-between items-center gap-3">
-          <span className="text-slate-600 dark:text-slate-300 font-medium">Department</span>
-          <span className="font-bold text-slate-900 dark:text-slate-100 text-right">{department?.name}</span>
+          <span className="text-slate-600 dark:text-slate-300 font-medium">
+            {t('token.department')}
+          </span>
+          <span className="font-bold text-slate-900 dark:text-slate-100 text-right">
+            {department?.name}
+          </span>
         </div>
       </div>
+
+      {trackUrl && (
+        <div className="card text-center space-y-3">
+          <p className="text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider">
+            {t('token.scanToTrack')}
+          </p>
+          <div className="mx-auto w-fit rounded-2xl bg-white p-3 shadow-sm ring-1 ring-cyan-300/40">
+            <QRCodeSVG value={trackUrl} size={148} level="M" marginSize={0} />
+          </div>
+          <div>
+            <p className="text-slate-600 dark:text-slate-300 text-xs font-bold uppercase tracking-wider mb-1">
+              {t('token.trackingCode')}
+            </p>
+            <p className="font-mono text-xl font-extrabold tracking-[0.2em] text-slate-900 dark:text-slate-100">
+              {publicCode}
+            </p>
+          </div>
+          <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+            {t('token.keepCode')}
+          </p>
+        </div>
+      )}
 
       <div className="rounded-xl border border-fuchsia-300/40 dark:border-fuchsia-400/30 bg-fuchsia-100/70 dark:bg-fuchsia-500/10 p-4 text-fuchsia-700 dark:text-fuchsia-200 text-sm font-medium text-left flex gap-3">
         <span className="text-xl shrink-0" aria-hidden>
           📢
         </span>
-        <span>Please stay in the waiting area. Your token will be called on the display.</span>
+        <span>{t('token.waitingAreaNotice')}</span>
       </div>
 
       <button type="button" onClick={onCheckStatus} className="btn-primary w-full">
-        Track live queue status
+        {t('token.trackButton')}
       </button>
     </motion.div>
   )

@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+tests
+.env
+*.log
+Dockerfile
+.dockerignore
+nginx.conf

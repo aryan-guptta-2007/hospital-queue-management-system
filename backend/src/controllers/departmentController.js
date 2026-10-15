@@ -1,5 +1,6 @@
 const Department = require('../models/Department');
 const { createError } = require('../middleware/errorHandler');
+const { recordInBackground, AUDIT_ACTIONS } = require('../services/auditLog');
 
 // ── GET /api/departments ───────────────────────────────────
 // Public — patient needs this to fill the token form
@@ -27,6 +28,14 @@ const getDepartment = async (req, res, next) => {
 const createDepartment = async (req, res, next) => {
   try {
     const dept = await Department.create(req.body);
+
+    recordInBackground({
+      user: req.user,
+      action: AUDIT_ACTIONS.DEPARTMENT_CREATE,
+      department: dept,
+      details: `Created ${dept.name} (${dept.code})`,
+    });
+
     res.status(201).json({ success: true, data: dept });
   } catch (err) {
     next(err);
@@ -41,6 +50,15 @@ const updateDepartment = async (req, res, next) => {
       runValidators: true,
     });
     if (!dept) throw createError('Department not found', 404);
+
+    recordInBackground({
+      user: req.user,
+      action: AUDIT_ACTIONS.DEPARTMENT_UPDATE,
+      department: dept,
+      // The fields the admin actually sent, not the whole document
+      details: `Updated ${dept.name}: ${Object.keys(req.body).join(', ') || 'no changes'}`,
+    });
+
     res.json({ success: true, data: dept });
   } catch (err) {
     next(err);

@@ -58,6 +58,15 @@
            transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-amber-400/40;
   }
 
+  /* Accessibility: every focusable thing shows focus, even if a component
+     forgets its own ring. Keyboard and switch users on a shared hospital
+     terminal depend on this. */
+  :focus-visible {
+    outline: 3px solid theme('colors.cyan.400');
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+  }
+
   .card {
     @apply bg-white/90 text-slate-900 backdrop-blur-sm rounded-2xl border border-cyan-300/30 p-6
            dark:bg-slate-900/75 dark:text-slate-100 dark:border-cyan-400/20;

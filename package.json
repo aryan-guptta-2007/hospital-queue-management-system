@@ -3,8 +3,20 @@
   "version": "1.0.0",
   "description": "Smart Queue & Token Management System for Government Hospitals",
   "scripts": {
-    "test": "node integration-test.js",
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "test": "npm run test:backend && npm run test:frontend",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend && npm test",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "format:check": "npm run format:check:backend && npm run format:check:frontend",
+    "format:check:backend": "cd backend && npm run format:check",
+    "format:check:frontend": "cd frontend && npm run format:check",
     "seed": "cd backend && npm run seed",
+    "seed:demo": "cd backend && npm run seed:demo",
+    "seed:reset": "cd backend && npm run seed:reset",
+    "migrate:indexes": "cd backend && npm run migrate:indexes",
     "start:backend": "cd backend && npm run dev",
     "start:frontend": "cd frontend && npm run dev"
   }

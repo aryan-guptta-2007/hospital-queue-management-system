@@ -39,9 +39,10 @@ const DashboardPage = () => {
 
   const handleCreateDemo = async () => {
     try {
+      // The endpoint matches a real department by name or code — a made-up one
+      // is now a 404 rather than a silent fallback
       await api.post('/queue/create', {
-        tokenNumber: `DEMO-${Math.floor(Math.random() * 1000)}`,
-        department: 'General Medicine',
+        department: queues[0]?.department?.code,
         priority: 'normal'
       })
       fetchSummary()
@@ -88,16 +89,19 @@ const DashboardPage = () => {
             </span>
             Refresh
           </button>
-          <button
-            type="button"
-            onClick={handleCreateDemo}
-            className="inline-flex items-center gap-2 self-start rounded-xl border-2 border-fuchsia-300/30 dark:border-fuchsia-400/30 bg-white/90 dark:bg-slate-900/90 px-4 py-2.5 text-sm font-semibold
-                       text-slate-700 dark:text-slate-200 shadow-sm transition-all duration-200
-                       hover:border-cyan-400/40 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:-translate-y-0.5"
-          >
-            <span className="text-base" aria-hidden>🚀</span>
-            Demo: Create Token
-          </button>
+          {/* Demo helper — the endpoint behind it does not exist in production */}
+          {!import.meta.env.PROD && (
+            <button
+              type="button"
+              onClick={handleCreateDemo}
+              className="inline-flex items-center gap-2 self-start rounded-xl border-2 border-fuchsia-300/30 dark:border-fuchsia-400/30 bg-white/90 dark:bg-slate-900/90 px-4 py-2.5 text-sm font-semibold
+                         text-slate-700 dark:text-slate-200 shadow-sm transition-all duration-200
+                         hover:border-cyan-400/40 hover:bg-white dark:hover:bg-slate-900 hover:shadow-md hover:-translate-y-0.5"
+            >
+              <span className="text-base" aria-hidden>🚀</span>
+              Demo: Create Token
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-10">
@@ -106,7 +110,7 @@ const DashboardPage = () => {
             { label: 'Active depts', value: activeDepts, accent: 'text-fuchsia-300', delay: 'stagger-1' },
             {
               label: 'Departments',
-              value: summary.length,
+              value: queues.length,
               accent: 'text-slate-200',
               delay: 'stagger-2',
               span: 'col-span-2 sm:col-span-1',
@@ -196,7 +200,7 @@ const DashboardPage = () => {
                 )}
 
                 <Link
-                  to="/admin/queue"
+                  to={`/admin/queue?dept=${dept.department.id}`}
                   className="mt-5 flex items-center justify-center gap-2 text-sm font-bold text-cyan-200
                              bg-cyan-500/10 hover:bg-cyan-500/20 py-3 rounded-xl transition-all duration-200
                              group-hover:shadow-md border border-cyan-500/30 hover:border-cyan-400/40"

@@ -1,46 +1,30 @@
 require('dotenv').config();
 const http = require('http');
-const { WebSocketServer } = require('ws');
 const app = require('./src/app');
+const connectDB = require('./src/config/db');
+const { init: initRealtime } = require('./src/realtime/socket');
 
-app.get("/test", (req, res) => {
-  res.json({ msg: "Backend working 🚀" });
-});
-
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 // ── Create HTTP server from Express app ───────────────────
 const server = http.createServer(app);
 
-// ── WebSocket Server (for real-time queue updates) ────────
-const wss = new WebSocketServer({ server, path: '/ws' });
+// ── Real-time queue feed ──────────────────────────────────
+// Per-department subscriptions + a 30s ping/pong heartbeat.
+// Controllers publish through src/realtime/socket.js, not a global.
+initRealtime(server);
 
-// Store wss globally so controllers can broadcast to all clients
-global.wss = wss;
+// ── Start Server ──────────────────────────────────────────
+// The database connection lives here, not in app.js, so tests can import the
+// app and point it at their own database.
+const start = async () => {
+  await connectDB();
 
-wss.on('connection', (ws) => {
-  console.log('🔌 New WebSocket client connected');
-
-  ws.send(JSON.stringify({ type: 'CONNECTED', message: 'Queue live feed connected' }));
-
-  ws.on('close', () => console.log('🔌 WebSocket client disconnected'));
-  ws.on('error', (err) => console.error('WebSocket error:', err.message));
-});
-
-// ── Broadcast helper — call this from any controller ──────
-// Usage: broadcastQueueUpdate({ type: 'QUEUE_UPDATE', data: {...} })
-global.broadcastQueueUpdate = (payload) => {
-  const message = JSON.stringify(payload);
-  wss.clients.forEach((client) => {
-    if (client.readyState === 1) { // 1 = OPEN
-      client.send(message);
-    }
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🔌 WebSocket ready at ws://localhost:${PORT}/ws`);
+    console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 };
 
-// ── Start Server ──────────────────────────────────────────
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`🔌 WebSocket ready at ws://localhost:${PORT}/ws`);
-  console.log(`🏥 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+start();

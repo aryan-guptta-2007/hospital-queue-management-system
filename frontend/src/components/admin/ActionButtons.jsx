@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-const ActionButtons = ({ selectedToken, departmentId, onAction, loading }) => {
+const ActionButtons = ({ selectedToken, servingToken, onAction, loading }) => {
   const [showEmergencyForm, setShowEmergencyForm] = useState(false)
   const [emergencyForm, setEmergencyForm] = useState({ name: '', phone: '', age: '', note: '' })
   const [submitting, setSubmitting] = useState(false)
@@ -41,8 +41,13 @@ const ActionButtons = ({ selectedToken, departmentId, onAction, loading }) => {
 
         <button
           type="button"
-          onClick={() => onAction('complete', selectedToken)}
-          disabled={loading || !selectedToken}
+          onClick={() => onAction('complete')}
+          disabled={loading || !servingToken}
+          title={
+            !servingToken
+              ? 'Nobody is being served right now'
+              : 'Completes the token shown as now serving'
+          }
           className="bg-gradient-to-br from-cyan-700 to-fuchsia-700 text-white font-semibold py-3 px-4 rounded-xl shadow-md
                      hover:shadow-lg hover:brightness-110 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
                      transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0
@@ -61,12 +66,17 @@ const ActionButtons = ({ selectedToken, departmentId, onAction, loading }) => {
         </button>
       </div>
 
-      {!selectedToken && (
-        <p className="text-xs text-slate-500 dark:text-slate-300 text-center font-medium">
-          Tap a row to select a patient for <strong className="text-cyan-600 dark:text-cyan-300">Skip</strong> or{' '}
-          <strong className="text-fuchsia-600 dark:text-fuchsia-300">Complete</strong>
-        </p>
-      )}
+      <p className="text-xs text-slate-500 dark:text-slate-300 text-center font-medium">
+        <strong className="text-fuchsia-600 dark:text-fuchsia-300">Complete</strong> always applies
+        to the token shown as now serving.
+        {!selectedToken && (
+          <>
+            {' '}
+            Tap a row to select a patient for{' '}
+            <strong className="text-cyan-600 dark:text-cyan-300">Skip</strong>.
+          </>
+        )}
+      </p>
 
       {showEmergencyForm && (
         <form
@@ -75,26 +85,41 @@ const ActionButtons = ({ selectedToken, departmentId, onAction, loading }) => {
                      shadow-lg shadow-red-500/20 animate-fade-in-up ring-1 ring-red-500/20"
         >
           <h3 className="font-display font-bold text-red-700 dark:text-red-300 text-lg flex items-center gap-2">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300" aria-hidden>
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-300"
+              aria-hidden
+            >
               🚨
             </span>
             Emergency insert
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label htmlFor="emergency-name" className="sr-only">
+              Patient name (required)
+            </label>
             <input
+              id="emergency-name"
               required
               placeholder="Patient name *"
               value={emergencyForm.name}
               onChange={(e) => setEmergencyForm({ ...emergencyForm, name: e.target.value })}
               className="input-field py-2.5 text-base"
             />
+            <label htmlFor="emergency-phone" className="sr-only">
+              Phone number (optional)
+            </label>
             <input
+              id="emergency-phone"
               placeholder="Phone (optional)"
               value={emergencyForm.phone}
               onChange={(e) => setEmergencyForm({ ...emergencyForm, phone: e.target.value })}
               className="input-field py-2.5 text-base"
             />
+            <label htmlFor="emergency-age" className="sr-only">
+              Age (optional)
+            </label>
             <input
+              id="emergency-age"
               type="number"
               placeholder="Age (optional)"
               value={emergencyForm.age}
@@ -102,7 +127,11 @@ const ActionButtons = ({ selectedToken, departmentId, onAction, loading }) => {
               onChange={(e) => setEmergencyForm({ ...emergencyForm, age: e.target.value })}
               className="input-field py-2.5 text-base"
             />
+            <label htmlFor="emergency-note" className="sr-only">
+              Note, for example the reason for the emergency
+            </label>
             <input
+              id="emergency-note"
               placeholder="Note (e.g. chest pain)"
               value={emergencyForm.note}
               onChange={(e) => setEmergencyForm({ ...emergencyForm, note: e.target.value })}
@@ -117,7 +146,11 @@ const ActionButtons = ({ selectedToken, departmentId, onAction, loading }) => {
             >
               Cancel
             </button>
-            <button type="submit" disabled={submitting} className="btn-danger flex-1 py-3 text-base sm:flex-[2]">
+            <button
+              type="submit"
+              disabled={submitting}
+              className="btn-danger flex-1 py-3 text-base sm:flex-[2]"
+            >
               {submitting ? 'Inserting…' : 'Insert at front'}
             </button>
           </div>
