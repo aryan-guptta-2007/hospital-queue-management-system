@@ -1,6 +1,7 @@
 const Token = require('../models/Token');
 const { TOKEN_STATUS } = require('../config/constants');
 const { getWaitingQueue } = require('./queueService');
+const { getISTDateString } = require('../utils/date');
 
 /**
  * Patient notifications.
@@ -193,7 +194,12 @@ const notifyApproachingPatients = async (departmentId) => {
 
     // Claim the right to notify before doing it
     const claimed = await Token.findOneAndUpdate(
-      { _id: token._id, notifiedAt: null, status: TOKEN_STATUS.WAITING },
+      {
+        _id: token._id,
+        notifiedAt: null,
+        status: TOKEN_STATUS.WAITING,
+        serviceDate: getISTDateString(),
+      },
       { notifiedAt: new Date() }
     );
 

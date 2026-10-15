@@ -22,6 +22,7 @@ const TOKEN_STATUS = {
   SERVING: 'serving',
   COMPLETED: 'completed',
   SKIPPED: 'skipped',
+  EXPIRED: 'expired',
 };
 
 // Default consultation time in minutes (used when dept has no override)

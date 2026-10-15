@@ -3,6 +3,7 @@ const http = require('http');
 const app = require('./src/app');
 const connectDB = require('./src/config/db');
 const { init: initRealtime } = require('./src/realtime/socket');
+const { closeStaleTokens, scheduleDayClose } = require('./src/services/dayClose');
 
 const PORT = process.env.PORT || 5001;
 
@@ -19,6 +20,8 @@ initRealtime(server);
 // app and point it at their own database.
 const start = async () => {
   await connectDB();
+  await closeStaleTokens();
+  scheduleDayClose();
 
   server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);

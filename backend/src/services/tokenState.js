@@ -7,16 +7,21 @@ const { createError } = require('../middleware/errorHandler');
  *
  *   waiting   → serving    (called next)
  *   waiting   → skipped    (patient absent before being called)
+ *   waiting   → expired    (day close)
  *   serving   → completed  (consultation done)
  *   serving   → skipped    (called, but did not turn up)
+ *   serving   → expired    (day close)
  *   skipped   → waiting    (requeued at the end of their priority group)
+ *   skipped   → expired    (day close)
  *   completed → ∅          (terminal)
+ *   expired   → ∅          (terminal)
  */
 const ALLOWED_TRANSITIONS = {
-  [TOKEN_STATUS.WAITING]: [TOKEN_STATUS.SERVING, TOKEN_STATUS.SKIPPED],
-  [TOKEN_STATUS.SERVING]: [TOKEN_STATUS.COMPLETED, TOKEN_STATUS.SKIPPED],
-  [TOKEN_STATUS.SKIPPED]: [TOKEN_STATUS.WAITING],
+  [TOKEN_STATUS.WAITING]: [TOKEN_STATUS.SERVING, TOKEN_STATUS.SKIPPED, TOKEN_STATUS.EXPIRED],
+  [TOKEN_STATUS.SERVING]: [TOKEN_STATUS.COMPLETED, TOKEN_STATUS.SKIPPED, TOKEN_STATUS.EXPIRED],
+  [TOKEN_STATUS.SKIPPED]: [TOKEN_STATUS.WAITING, TOKEN_STATUS.EXPIRED],
   [TOKEN_STATUS.COMPLETED]: [],
+  [TOKEN_STATUS.EXPIRED]: [],
 };
 
 /** Every status a token may legally be in to reach `target` */

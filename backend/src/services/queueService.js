@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Token = require('../models/Token');
 const Department = require('../models/Department');
 const { TOKEN_STATUS, DEFAULT_CONSULTATION_TIME } = require('../config/constants');
-const { getISTStartOfDay } = require('../utils/date');
+const { getISTStartOfDay, getISTDateString } = require('../utils/date');
 
 /**
  * The one queue order, shared by every read of a queue and by callNext.
@@ -28,6 +28,7 @@ const getWaitingQueue = async (departmentId) => {
   return Token.find({
     department: departmentId,
     status: TOKEN_STATUS.WAITING,
+    serviceDate: getISTDateString(),
   })
     .populate('patient', 'name age phone priority isEmergency')
     .populate('department', 'name code avgConsultationTime')
@@ -124,6 +125,7 @@ const getWaitContext = async (departmentId) => {
   const serving = await Token.findOne({
     department: departmentId,
     status: TOKEN_STATUS.SERVING,
+    serviceDate: getISTDateString(),
   }).select('calledAt');
 
   // What is actually left of the consultation in progress, measured from when
@@ -195,6 +197,7 @@ const getNextToken = async (departmentId) => {
   return Token.findOne({
     department: departmentId,
     status: TOKEN_STATUS.WAITING,
+    serviceDate: getISTDateString(),
   })
     .populate('patient', 'name age priority isEmergency')
     .populate('department', 'name code')

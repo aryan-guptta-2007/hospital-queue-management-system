@@ -48,4 +48,5 @@ export const STATUS_CONFIG = {
   serving: { label: 'Now Serving', color: 'bg-teal-100 text-teal-700' },
   completed: { label: 'Completed', color: 'bg-gray-100 text-gray-600'  },
   skipped: { label: 'Skipped', color: 'bg-yellow-100 text-yellow-700' },
+  expired: { label: 'Expired', color: 'bg-red-100 text-red-700' },
 }

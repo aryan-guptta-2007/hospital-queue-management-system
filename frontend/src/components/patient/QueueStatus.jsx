@@ -78,6 +78,7 @@ const QueueStatus = ({ publicCode, onBack }) => {
   const statusConfig = STATUS_CONFIG[data?.status] || STATUS_CONFIG.waiting
   const isServing = data?.status === 'serving'
   const isCompleted = data?.status === 'completed'
+  const isExpired = data?.status === 'expired'
   const waitMins = Number(data?.estimatedWaitTime || 0)
   const waitProgress = waitMins > 0 ? Math.max(8, Math.min(100, (90 - waitMins) / 90 * 100)) : 100
 
@@ -85,7 +86,9 @@ const QueueStatus = ({ publicCode, onBack }) => {
     ? 'from-cyan-700 to-fuchsia-700 ring-cyan-400/30'
     : isCompleted
       ? 'from-slate-600 to-slate-800 ring-slate-400/20'
-      : 'from-cyan-700 to-blue-700 ring-cyan-400/25'
+      : isExpired
+        ? 'from-rose-800 to-slate-900 ring-rose-500/20'
+        : 'from-cyan-700 to-blue-700 ring-cyan-400/25'
 
   return (
     <motion.div
@@ -197,6 +200,12 @@ const QueueStatus = ({ publicCode, onBack }) => {
         <div className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-5 text-center">
           <p className="text-slate-700 dark:text-slate-100 text-xl font-bold">{t('status.completedTitle')}</p>
           <p className="text-slate-500 dark:text-slate-300 mt-2 font-medium">{t('status.completedBody')}</p>
+        </div>
+      )}
+
+      {isExpired && (
+        <div className="rounded-2xl border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/40 p-5 text-center">
+          <p className="text-rose-700 dark:text-rose-300 text-xl font-bold">{t('tokenStatus.expired')}</p>
         </div>
       )}
 

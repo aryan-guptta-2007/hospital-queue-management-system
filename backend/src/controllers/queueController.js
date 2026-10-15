@@ -52,6 +52,7 @@ const getQueue = async (req, res, next) => {
     const serving = await Token.findOne({
       department: req.params.departmentId,
       status: TOKEN_STATUS.SERVING,
+      serviceDate: getISTDateString(),
     }).populate('patient', 'name age priority');
 
     // Today's skipped tokens, so staff can requeue a patient who turns up late
@@ -95,6 +96,7 @@ const callNext = async (req, res, next) => {
     const serving = await Token.findOne({
       department: departmentId,
       status: TOKEN_STATUS.SERVING,
+      serviceDate: getISTDateString(),
     }).select('_id');
 
     const actualId = serving ? String(serving._id) : null;
@@ -114,7 +116,11 @@ const callNext = async (req, res, next) => {
     let nextToken;
     try {
       nextToken = await Token.findOneAndUpdate(
-        { department: departmentId, status: statusGuard(TOKEN_STATUS.SERVING) },
+        {
+          department: departmentId,
+          status: statusGuard(TOKEN_STATUS.SERVING),
+          serviceDate: getISTDateString(),
+        },
         { status: TOKEN_STATUS.SERVING, calledAt: new Date() },
         { new: true, sort: queueSort() }
       ).populate('patient', 'name age priority isEmergency')
@@ -288,6 +294,7 @@ const recallToken = async (req, res, next) => {
     const serving = await Token.findOne({
       department: departmentId,
       status: TOKEN_STATUS.SERVING,
+      serviceDate: getISTDateString(),
     })
       .populate('patient', 'name age priority isEmergency')
       .populate('department', 'name code');
@@ -378,16 +385,19 @@ const getAllQueues = async (req, res, next) => {
     }
 
     const departments = await Department.find(filter);
+    const today = getISTDateString();
 
     const summary = await Promise.all(
       departments.map(async (dept) => {
         const waitingCount = await Token.countDocuments({
           department: dept._id,
           status: TOKEN_STATUS.WAITING,
+          serviceDate: today,
         });
         const serving = await Token.findOne({
           department: dept._id,
           status: TOKEN_STATUS.SERVING,
+          serviceDate: today,
         }).populate('patient', 'name');
 
         return {
@@ -410,15 +420,18 @@ const getAllQueues = async (req, res, next) => {
 const getPublicDisplay = async (req, res, next) => {
   try {
     const { departmentId } = req.params;
+    const today = getISTDateString();
 
     const serving = await Token.findOne({
       department: departmentId,
       status: TOKEN_STATUS.SERVING,
+      serviceDate: today,
     }).populate('patient', 'name').populate('department', 'name code');
 
     const next5 = await Token.find({
       department: departmentId,
       status: TOKEN_STATUS.WAITING,
+      serviceDate: today,
     })
       .populate('patient', 'name')
       .sort(queueSort())

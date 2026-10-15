@@ -5,6 +5,7 @@ const { getWaitTimeForToken } = require('../services/waitTimeService');
 const { createError } = require('../middleware/errorHandler');
 const { TOKEN_STATUS } = require('../config/constants');
 const { toPublicToken } = require('../utils/publicView');
+const { getISTDateString } = require('../utils/date');
 const { broadcast } = require('../realtime/socket');
 const { notifyApproachingPatientsInBackground } = require('../services/notifier');
 
@@ -106,6 +107,7 @@ const getCurrentToken = async (req, res, next) => {
     const token = await Token.findOne({
       department: req.params.departmentId,
       status: TOKEN_STATUS.SERVING,
+      serviceDate: getISTDateString(),
     }).populate('patient', 'name');
 
     // Public endpoint — masked name, no age/phone/ObjectIds

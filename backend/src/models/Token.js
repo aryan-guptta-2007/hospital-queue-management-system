@@ -74,6 +74,7 @@ const tokenSchema = new mongoose.Schema(
     calledAt: { type: Date, default: null },      // When token was called
     completedAt: { type: Date, default: null },   // When consultation ended
     skippedAt: { type: Date, default: null },     // When patient was skipped
+    expiredAt: { type: Date, default: null },     // When token expired
     // Admin note (e.g. reason for emergency insert)
     note: { type: String, default: '' },
   },

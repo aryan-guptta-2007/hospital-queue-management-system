@@ -1,6 +1,7 @@
 const Token = require('../models/Token');
 const { TOKEN_STATUS } = require('../config/constants');
 const { getWaitContext, estimateWait } = require('./queueService');
+const { getISTDateString } = require('../utils/date');
 
 /**
  * Calculates a single token's estimated wait and queue position.
@@ -24,6 +25,7 @@ const getWaitTimeForToken = async (tokenId) => {
   const aheadCount = await Token.countDocuments({
     department: token.department,
     status: TOKEN_STATUS.WAITING,
+    serviceDate: getISTDateString(),
     $or: [
       // Any token with strictly higher priority
       { priority: { $gt: token.priority } },

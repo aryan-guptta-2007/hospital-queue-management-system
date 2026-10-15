@@ -18,7 +18,8 @@
     "waiting": "Waiting",
     "serving": "Now Serving",
     "completed": "Completed",
-    "skipped": "Skipped"
+    "skipped": "Skipped",
+    "expired": "Expired — please take a new token"
   },
   "wait": {
     "soon": "Soon",
@@ -89,6 +90,7 @@
     "proceed": "Please proceed to the consultation room.",
     "completedTitle": "Consultation completed",
     "completedBody": "Thank you for visiting. Get well soon.",
+    "expired": "Expired — please take a new token",
     "patient": "Patient",
     "priority": "Priority",
     "lastUpdated": "Last updated {{time}}",
