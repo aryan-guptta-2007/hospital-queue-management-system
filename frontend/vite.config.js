@@ -34,6 +34,14 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,png,svg,woff2}'],
+        globIgnores: [
+          '**/AnalyticsPage*.js',
+          '**/AuditLogPage*.js',
+          '**/DashboardPage*.js',
+          '**/QueuePage*.js',
+          '**/LoginPage*.js',
+          '**/ChangePasswordPage*.js',
+        ],
         // The shell is cached so the app opens offline. Queue data is NOT:
         // a stale position is worse than an honest error message.
         navigateFallbackDenylist: [/^\/api/, /^\/ws/],

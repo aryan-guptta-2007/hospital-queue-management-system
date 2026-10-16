@@ -183,6 +183,9 @@ const close = () => {
 
   return new Promise((resolve) => {
     if (!wss) return resolve();
+    // Since ws 8, close() leaves open connections alone and only calls back
+    // once they are all gone, so end them here or shutdown waits forever
+    wss.clients.forEach((ws) => ws.terminate());
     wss.close(() => {
       wss = null;
       resolve();

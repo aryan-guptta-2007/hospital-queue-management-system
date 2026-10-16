@@ -1,18 +1,25 @@
 const http = require('http');
 const { WebSocket } = require('ws');
-const { init, close } = require('../src/realtime/socket');
+const { init, close, MAX_SUBSCRIPTIONS_PER_SOCKET } = require('../src/realtime/socket');
 
 describe('realtime socket server', () => {
   let server;
   let port;
+  const openClients = new Set();
 
   beforeAll((done) => {
     server = http.createServer();
     init(server);
-    server.listen(0, () => {
+    server.listen(0, '127.0.0.1', () => {
       port = server.address().port;
       done();
     });
+  });
+
+  afterEach(() => {
+    // A failed assertion must not leave a socket open and hang afterAll
+    openClients.forEach((ws) => ws.terminate());
+    openClients.clear();
   });
 
   afterAll(async () => {
@@ -20,102 +27,97 @@ describe('realtime socket server', () => {
     await new Promise((resolve) => server.close(resolve));
   });
 
-  const createClient = () => {
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(`ws://localhost:${port}/ws`);
+  /**
+   * Opens a client that queues every message from the moment it is created.
+   *
+   * The server greets on connection, and that frame often arrives in the same
+   * packet as the handshake, so 'message' fires right after 'open' — before
+   * an `await` on the open promise resumes. A listener attached after the
+   * await would miss the greeting and wait forever.
+   */
+  const createClient = () =>
+    new Promise((resolve, reject) => {
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+      const queue = [];
+      const waiters = [];
+
+      ws.on('message', (raw) => {
+        const message = JSON.parse(raw.toString());
+        const waiter = waiters.shift();
+        if (waiter) waiter(message);
+        else queue.push(message);
+      });
+
+      ws.nextMessage = () =>
+        queue.length > 0 ? Promise.resolve(queue.shift()) : new Promise((res) => waiters.push(res));
+
+      openClients.add(ws);
       ws.on('open', () => resolve(ws));
       ws.on('error', reject);
     });
-  };
-
-  const waitForMessage = (ws) => {
-    return new Promise((resolve) => {
-      ws.once('message', (raw) => {
-        resolve(JSON.parse(raw.toString()));
-      });
-    });
-  };
 
   it('sends CONNECTED greeting upon connection', async () => {
     const ws = await createClient();
-    const greeting = await waitForMessage(ws);
-    expect(greeting).toEqual({
+
+    expect(await ws.nextMessage()).toEqual({
       type: 'CONNECTED',
       message: 'Queue live feed connected',
     });
-    ws.close();
   });
 
   it('rejects subscribe with invalid departmentId', async () => {
     const ws = await createClient();
-    await waitForMessage(ws); // consume greeting
+    await ws.nextMessage(); // greeting
 
     ws.send(JSON.stringify({ type: 'SUBSCRIBE', departmentId: 'bad-id' }));
-    const reply = await waitForMessage(ws);
 
-    expect(reply).toEqual({
+    expect(await ws.nextMessage()).toEqual({
       type: 'SUBSCRIBE_REJECTED',
       departmentId: 'bad-id',
       message: 'departmentId must be a valid id',
     });
-    ws.close();
   });
 
-  it('caps department subscriptions at 20 per connection', async () => {
+  it(`caps department subscriptions at ${MAX_SUBSCRIPTIONS_PER_SOCKET} per connection`, async () => {
     const ws = await createClient();
-    await waitForMessage(ws); // consume greeting
+    await ws.nextMessage(); // greeting
 
-    // Subscribe to 20 valid distinct ObjectIds
-    for (let i = 1; i <= 20; i++) {
-      const deptId = i.toString(16).padStart(24, '0');
-      ws.send(JSON.stringify({ type: 'SUBSCRIBE', departmentId: deptId }));
-      const res = await waitForMessage(ws);
-      expect(res).toEqual({
-        type: 'SUBSCRIBED',
-        departmentId: deptId,
-      });
+    for (let i = 1; i <= MAX_SUBSCRIPTIONS_PER_SOCKET; i += 1) {
+      const departmentId = i.toString(16).padStart(24, '0');
+      ws.send(JSON.stringify({ type: 'SUBSCRIBE', departmentId }));
+      expect(await ws.nextMessage()).toEqual({ type: 'SUBSCRIBED', departmentId });
     }
 
-    // Subscribing to an existing department again still succeeds
-    const existingDeptId = (1).toString(16).padStart(24, '0');
-    ws.send(JSON.stringify({ type: 'SUBSCRIBE', departmentId: existingDeptId }));
-    const reSub = await waitForMessage(ws);
-    expect(reSub).toEqual({
-      type: 'SUBSCRIBED',
-      departmentId: existingDeptId,
-    });
+    // Re-subscribing to one it already has still succeeds
+    const existing = (1).toString(16).padStart(24, '0');
+    ws.send(JSON.stringify({ type: 'SUBSCRIBE', departmentId: existing }));
+    expect(await ws.nextMessage()).toEqual({ type: 'SUBSCRIBED', departmentId: existing });
 
-    // 21st department subscription is rejected
-    const extraDeptId = (21).toString(16).padStart(24, '0');
-    ws.send(JSON.stringify({ type: 'SUBSCRIBE', departmentId: extraDeptId }));
-    const rejected = await waitForMessage(ws);
-    expect(rejected).toEqual({
+    // One more distinct department is refused
+    const extra = (MAX_SUBSCRIPTIONS_PER_SOCKET + 1).toString(16).padStart(24, '0');
+    ws.send(JSON.stringify({ type: 'SUBSCRIBE', departmentId: extra }));
+    expect(await ws.nextMessage()).toEqual({
       type: 'SUBSCRIBE_REJECTED',
-      departmentId: extraDeptId,
-      message: 'Maximum 20 department subscriptions allowed per connection',
+      departmentId: extra,
+      message: `Maximum ${MAX_SUBSCRIPTIONS_PER_SOCKET} department subscriptions allowed per connection`,
     });
-
-    ws.close();
   });
 
-  it('enforces maxPayload 4096 bytes and closes connection when exceeded', async () => {
+  it('closes the connection with 1009 when a frame exceeds 4096 bytes', async () => {
     const ws = await createClient();
-    await waitForMessage(ws); // consume greeting
+    await ws.nextMessage(); // greeting
 
-    const closePromise = new Promise((resolve) => {
-      ws.on('close', (code) => resolve(code));
-    });
+    const closed = new Promise((resolve) => ws.on('close', (code) => resolve(code)));
 
-    // Send a payload exceeding 4096 bytes
-    const hugePayload = JSON.stringify({
-      type: 'SUBSCRIBE',
-      departmentId: '0'.repeat(24),
-      padding: 'x'.repeat(5000),
-    });
-    ws.send(hugePayload);
+    ws.send(
+      JSON.stringify({
+        type: 'SUBSCRIBE',
+        departmentId: '0'.repeat(24),
+        padding: 'x'.repeat(5000),
+      })
+    );
 
-    const closeCode = await closePromise;
-    // ws protocol code 1009 is 'Message Too Big'
-    expect(closeCode).toBe(1009);
+    // 1009 = Message Too Big
+    expect(await closed).toBe(1009);
   });
 });

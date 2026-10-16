@@ -1,4 +1,4 @@
-const { validateEnv } = require('../server');
+const { validateEnv } = require('../src/config/env');
 
 describe('server environment validation (validateEnv)', () => {
   const originalEnv = { ...process.env };

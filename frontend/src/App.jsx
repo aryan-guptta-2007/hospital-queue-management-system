@@ -49,33 +49,21 @@ const App = () => (
             <Route path="/track/:publicCode" element={<TrackPage />} />
 
             {/* ── Admin Routes ────────────────────── */}
-            <Route path="/admin/login" element={
-              <Suspense fallback={<Loader />}><LoginPage /></Suspense>
-            } />
+            <Route path="/admin/login" element={<LoginPage />} />
             <Route path="/admin/change-password" element={
-              <RequireAuth>
-                <Suspense fallback={<Loader />}><ChangePasswordPage /></Suspense>
-              </RequireAuth>
+              <RequireAuth><ChangePasswordPage /></RequireAuth>
             } />
             <Route path="/admin/dashboard" element={
-              <ProtectedRoute>
-                <Suspense fallback={<Loader />}><DashboardPage /></Suspense>
-              </ProtectedRoute>
+              <ProtectedRoute><DashboardPage /></ProtectedRoute>
             } />
             <Route path="/admin/queue" element={
-              <ProtectedRoute>
-                <Suspense fallback={<Loader />}><QueuePage /></Suspense>
-              </ProtectedRoute>
+              <ProtectedRoute><QueuePage /></ProtectedRoute>
             } />
             <Route path="/admin/analytics" element={
-              <ProtectedRoute>
-                <Suspense fallback={<Loader />}><AnalyticsPage /></Suspense>
-              </ProtectedRoute>
+              <ProtectedRoute><AnalyticsPage /></ProtectedRoute>
             } />
             <Route path="/admin/audit" element={
-              <ProtectedRoute>
-                <Suspense fallback={<Loader />}><AuditLogPage /></Suspense>
-              </ProtectedRoute>
+              <ProtectedRoute><AuditLogPage /></ProtectedRoute>
             } />
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
 
