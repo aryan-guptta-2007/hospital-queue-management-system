@@ -67,7 +67,7 @@ const QUEUE = {
 
 const renderPage = (path = '/admin/queue') =>
   render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <QueuePage />
     </MemoryRouter>
   )

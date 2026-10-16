@@ -1,7 +1,26 @@
-import { useState, useEffect, useLayoutEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, lazy, Suspense, Component } from 'react'
 import { Link } from 'react-router-dom'
 import LandingThemeToggle from '../components/landing/LandingThemeToggle'
 import HospitalQueueIllustration from '../components/landing/HospitalQueueIllustration'
+import Loader from '../components/common/Loader'
+
+const HeroCanvas = lazy(() => import('../components/landing/HeroCanvas'))
+
+class SceneErrorBoundary extends Component {
+  state = { hasError: false }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(error) {
+    console.warn('3D Hero scene failed to render, falling back to 2D illustration:', error)
+  }
+  render() {
+    if (this.state.hasError) {
+      return <HospitalQueueIllustration isDark={this.props.isDark} reducedMotion={this.props.reducedMotion} />
+    }
+    return this.props.children
+  }
+}
 
 const STORAGE_KEY = 'hq-landing-theme'
 
@@ -314,7 +333,11 @@ const LandingPage = () => {
                   Live queue preview
                 </p>
                 <div className="h-full min-h-[300px] w-full p-5 lg:min-h-[560px] lg:p-7">
-                  <HospitalQueueIllustration isDark={isDark} reducedMotion={reducedMotion} />
+                  <SceneErrorBoundary isDark={isDark} reducedMotion={reducedMotion}>
+                    <Suspense fallback={<Loader />}>
+                      <HeroCanvas reducedMotion={reducedMotion} colorMode={theme} className="h-full w-full rounded-2xl" />
+                    </Suspense>
+                  </SceneErrorBoundary>
                 </div>
               </div>
             </div>

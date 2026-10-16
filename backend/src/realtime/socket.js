@@ -22,15 +22,30 @@ const subscriptions = new Map();
 let wss = null;
 let heartbeat = null;
 
+const MAX_SUBSCRIPTIONS_PER_SOCKET = 20;
+
 const subscribe = (ws, departmentId) => {
   const id = String(departmentId || '');
-  if (!OBJECT_ID.test(id)) return false;
+  if (!OBJECT_ID.test(id)) {
+    return { ok: false, message: 'departmentId must be a valid id' };
+  }
+
+  if (ws.departments?.has(id)) {
+    return { ok: true };
+  }
+
+  if (ws.departments && ws.departments.size >= MAX_SUBSCRIPTIONS_PER_SOCKET) {
+    return {
+      ok: false,
+      message: `Maximum ${MAX_SUBSCRIPTIONS_PER_SOCKET} department subscriptions allowed per connection`,
+    };
+  }
 
   if (!subscriptions.has(id)) subscriptions.set(id, new Set());
   subscriptions.get(id).add(ws);
   ws.departments.add(id);
 
-  return true;
+  return { ok: true };
 };
 
 const unsubscribe = (ws, departmentId) => {
@@ -72,11 +87,11 @@ const handleMessage = (ws, raw) => {
   if (!message || typeof message !== 'object') return;
 
   if (message.type === 'SUBSCRIBE') {
-    const ok = subscribe(ws, message.departmentId);
+    const result = subscribe(ws, message.departmentId);
     send(ws, {
-      type: ok ? 'SUBSCRIBED' : 'SUBSCRIBE_REJECTED',
+      type: result.ok ? 'SUBSCRIBED' : 'SUBSCRIBE_REJECTED',
       departmentId: message.departmentId,
-      ...(ok ? {} : { message: 'departmentId must be a valid id' }),
+      ...(result.ok ? {} : { message: result.message }),
     });
     return;
   }
@@ -92,7 +107,7 @@ const handleMessage = (ws, raw) => {
  * @param {import('http').Server} server
  */
 const init = (server) => {
-  wss = new WebSocketServer({ server, path: '/ws' });
+  wss = new WebSocketServer({ server, path: '/ws', maxPayload: 4096 });
 
   wss.on('connection', (ws) => {
     ws.departments = new Set();
@@ -175,4 +190,4 @@ const close = () => {
   });
 };
 
-module.exports = { init, broadcast, close, HEARTBEAT_INTERVAL_MS };
+module.exports = { init, broadcast, close, HEARTBEAT_INTERVAL_MS, MAX_SUBSCRIPTIONS_PER_SOCKET };

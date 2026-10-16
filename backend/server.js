@@ -15,10 +15,27 @@ const server = http.createServer(app);
 // Controllers publish through src/realtime/socket.js, not a global.
 initRealtime(server);
 
+// ── Environment Validation ──────────────────────────────
+const validateEnv = () => {
+  if (!process.env.MONGO_URI) {
+    console.error('❌ FATAL: MONGO_URI environment variable is missing');
+    process.exit(1);
+  }
+  if (!process.env.JWT_SECRET) {
+    console.error('❌ FATAL: JWT_SECRET environment variable is missing');
+    process.exit(1);
+  }
+  if (process.env.NODE_ENV === 'production' && process.env.JWT_SECRET.length < 32) {
+    console.error('❌ FATAL: JWT_SECRET must be at least 32 characters long in production');
+    process.exit(1);
+  }
+};
+
 // ── Start Server ──────────────────────────────────────────
 // The database connection lives here, not in app.js, so tests can import the
 // app and point it at their own database.
 const start = async () => {
+  validateEnv();
   await connectDB();
   await closeStaleTokens();
   scheduleDayClose();
@@ -30,4 +47,9 @@ const start = async () => {
   });
 };
 
-start();
+if (require.main === module) {
+  start();
+}
+
+module.exports = { validateEnv, start };
+
