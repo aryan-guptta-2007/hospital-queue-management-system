@@ -8,19 +8,19 @@ const HospitalQueueIllustration = ({ isDark = false }) => {
   useEffect(() => {
     const fetchQueue = async () => {
       try {
-        const res = await api.get('/queue/all')
+        const res = await api.get('/queue/public-summary')
         if (res.data.success) {
           setQueue(res.data?.data || [])
         }
-      } catch (err) {
-        console.error('API Error:', err)
+      } catch {
+        // Fail silently
       } finally {
         setLoading(false)
       }
     }
 
     fetchQueue()
-    const interval = setInterval(fetchQueue, 10000) // Polling every 10s
+    const interval = setInterval(fetchQueue, 30000) // Polling every 30s
     return () => clearInterval(interval)
   }, [])
 
