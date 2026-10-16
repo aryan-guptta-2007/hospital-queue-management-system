@@ -502,6 +502,39 @@ const openapi = {
       },
     },
 
+    '/api/queue/public-summary': {
+      get: {
+        tags: ['Queue'],
+        summary: 'Public queue preview',
+        description:
+          'Public. Privacy-safe queue preview for all active departments (for landing pages and overviews). Contains no patient information.',
+        security: [],
+        responses: {
+          200: ok(
+            'Public summary',
+            envelope({
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  department: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string' },
+                      name: { type: 'string' },
+                      code: { type: 'string' },
+                    },
+                  },
+                  waitingCount: { type: 'integer' },
+                  currentToken: { type: 'string', nullable: true },
+                },
+              },
+            })
+          ),
+        },
+      },
+    },
+
     '/api/queue/public/{departmentId}': {
       get: {
         tags: ['Queue'],

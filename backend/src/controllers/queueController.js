@@ -450,6 +450,40 @@ const getPublicDisplay = async (req, res, next) => {
   }
 };
 
+// ── GET /api/queue/public-summary ────────────────────────
+// Public — privacy-safe queue preview for all active departments (landing page)
+const getPublicSummary = async (req, res, next) => {
+  try {
+    const departments = await Department.find({ isActive: true });
+    const today = getISTDateString();
+
+    const summary = await Promise.all(
+      departments.map(async (dept) => {
+        const waitingCount = await Token.countDocuments({
+          department: dept._id,
+          status: TOKEN_STATUS.WAITING,
+          serviceDate: today,
+        });
+        const serving = await Token.findOne({
+          department: dept._id,
+          status: TOKEN_STATUS.SERVING,
+          serviceDate: today,
+        }).select('tokenNumber');
+
+        return {
+          department: { id: dept._id, name: dept.name, code: dept.code },
+          waitingCount,
+          currentToken: serving?.tokenNumber || null,
+        };
+      })
+    );
+
+    res.json({ success: true, data: summary });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // ── POST /api/queue/create ───────────────────────────────
 // Admin — direct token creation for demos. Only registered outside production
 // (see routes/queueRoutes.js).
@@ -516,6 +550,7 @@ module.exports = {
   insertEmergency,
   getAllQueues,
   getPublicDisplay,
-  createQueue
+  getPublicSummary,
+  createQueue,
 };
 

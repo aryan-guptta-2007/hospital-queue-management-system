@@ -87,4 +87,48 @@ describe('public endpoints', () => {
     expect(waiting.patient.name).toBe('Rahul Sharma');
     expect(waiting.patient.age).toBe(72);
   });
+
+  it('serves a public summary without auth containing no patient names or sensitive details', async () => {
+    // Put one token in serving so currentToken is populated
+    await request(app)
+      .post(`/api/queue/${opd._id}/next`)
+      .set(auth(adminJwt))
+      .send({ currentServingId: null });
+
+    // Generate another token so waitingCount > 0
+    await generateToken(opd._id, {
+      name: 'Ananya Verma',
+      age: 28,
+      phone: '9876543211',
+    });
+
+    const res = await request(app).get('/api/queue/public-summary');
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+
+    const opdSummary = res.body.data.find(
+      (dept) => String(dept.department.id) === String(opd._id)
+    );
+    expect(opdSummary).toBeDefined();
+    expect(opdSummary.department).toEqual({
+      id: String(opd._id),
+      name: 'Out Patient Department',
+      code: 'OPD',
+    });
+    expect(opdSummary.waitingCount).toBe(1);
+    expect(opdSummary.currentToken).toBe(token.tokenNumber);
+
+    // Strict privacy checks:
+    const stringified = JSON.stringify(res.body.data);
+    expect(stringified).not.toContain('Rahul');
+    expect(stringified).not.toContain('Sharma');
+    expect(stringified).not.toContain('Ananya');
+    expect(stringified).not.toContain('Verma');
+    expect(stringified).not.toMatch(/phone/i);
+    expect(stringified).not.toMatch(/"age"/);
+    expect(stringified).not.toMatch(/"patient"/);
+    expect(stringified).not.toMatch(/"currentPatient"/);
+  });
 });

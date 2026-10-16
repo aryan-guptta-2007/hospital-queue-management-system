@@ -10,11 +10,15 @@ const {
   insertEmergency,
   getAllQueues,
   getPublicDisplay,
+  getPublicSummary,
   createQueue,
 } = require('../controllers/queueController');
 const { protect } = require('../middleware/authMiddleware');
 const { validate } = require('../validators/validate');
 const schemas = require('../validators/queueValidators');
+
+// GET /api/queue/public-summary       → public queue overview for all departments (landing preview)
+router.get('/public-summary', getPublicSummary);
 
 // GET /api/queue/public/:departmentId → public display board (no auth)
 router.get('/public/:departmentId', validate(schemas.byDepartment), getPublicDisplay);
